@@ -1,0 +1,2139 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Su Kirliliği Deneme Sınavı</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 10px;
+      display: flex;
+      justify-content: center;
+      padding-bottom: 80px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 860px;
+    }
+
+    .menu-container, .quiz-container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 100%;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .menu-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: left;
+      cursor: pointer;
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      color: white;
+    }
+
+    .menu-btn.locked {
+      background: linear-gradient(135deg, #6c757d, #495057);
+      cursor: not-allowed;
+      order: 999;
+      opacity: 0.85;
+    }
+
+    .wrong-menu-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: left;
+      cursor: pointer;
+      background: linear-gradient(135deg, #dc3545, #a71d2a);
+      color: white;
+      order: 9999;
+      animation: wrongBlink 10s infinite;
+    }
+
+    @keyframes wrongBlink {
+      0%, 45% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(220,53,69,0);
+      }
+      50% {
+        opacity: 0.35;
+        transform: scale(1.02);
+        box-shadow: 0 0 18px rgba(220,53,69,0.45);
+      }
+      55%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(220,53,69,0);
+      }
+    }
+
+    .quiz-container {
+      display: none;
+      position: relative;
+      padding-top: 85px;
+      min-height: 100vh;
+    }
+
+    .progress-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 6px;
+      background: #28a745;
+      transition: 0.3s;
+      width: 0%;
+      border-radius: 14px 14px 0 0;
+    }
+
+    .main-menu-btn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: calc(1rem + 4pt);
+      color: #333;
+      padding: 5px 0;
+    }
+
+    .header-info {
+      position: absolute;
+      top: 15px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding-right: 110px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      min-width: 0;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .header-subject {
+      font-weight: normal;
+      color: #777;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .retry-badge {
+      display: none;
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffe69c;
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+
+    .question-title {
+      margin-top: 0;
+      margin-bottom: 16px;
+      line-height: 1.45;
+      font-size: 1.2rem;
+      color: #222;
+    }
+
+    .option-btn {
+      width: 100%;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      border: 2px solid #e9ecef;
+      background: #f8f9fa;
+      text-align: left;
+      cursor: pointer;
+      font-size: 1.05rem;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.2s ease;
+      position: relative;
+    }
+
+    .option-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+    }
+
+    .option-btn.correct {
+      background: #d4edda !important;
+      border-color: #28a745 !important;
+      color: #155724 !important;
+      font-weight: bold;
+    }
+
+    .option-btn.wrong {
+      background: #f8d7da !important;
+      border-color: #dc3545 !important;
+      color: #721c24 !important;
+      font-weight: bold;
+    }
+
+    .tick {
+      display: inline-block;
+      margin-left: 10px;
+      color: #1f9d45;
+      font-weight: bold;
+      opacity: 0;
+      transform: scale(0.4);
+    }
+
+    .tick.show {
+      animation: popTick 0.45s ease forwards;
+    }
+
+    @keyframes popTick {
+      0%   { opacity: 0; transform: scale(0.4); }
+      60%  { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .explanation {
+      display: none;
+      margin-top: 20px;
+      padding: 15px;
+      background: #eaf2f8;
+      border-left: 5px solid #2980b9;
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
+    .nav-controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 18px;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .next-btn { background: #007bff; }
+    .prev-btn {
+      background: #e9ecef;
+      color: #dc3545 !important;
+      border: 1px solid #ddd;
+    }
+
+    .quiz-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+      color: #666;
+      font-weight: bold;
+      font-size: 0.9rem;
+      flex-wrap: wrap;
+    }
+
+    .disclaimer-box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #fdfdfd;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      color: #888;
+      font-size: 0.8rem;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .disclaimer-title {
+      display: block;
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+    }
+
+    .source-tag {
+      position: fixed;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(0, 0, 0, 0.05);
+      color: #777;
+      padding: 5px 10px;
+      border-radius: 10px;
+      font-size: 0.72rem;
+      font-weight: bold;
+      z-index: 9999;
+    }
+
+    .reset-set-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      background: #ffc107;
+      border: none;
+      padding: 8px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    @media (max-width: 480px) {
+      .quiz-container {
+        padding-top: 110px;
+      }
+
+      .header-info {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        padding-right: 104px;
+        align-items: flex-start;
+      }
+
+      .header-left {
+        display: block;
+        padding-right: 6px;
+      }
+
+      .main-menu-btn {
+        display: block;
+        font-size: 0.95rem;
+        padding: 0;
+        margin-bottom: 6px;
+      }
+
+      .header-subject {
+        display: block;
+        margin: 0;
+        font-size: 0.82rem;
+        line-height: 1.3;
+        max-width: 100%;
+      }
+
+      .question-title {
+        font-size: 1.05rem;
+      }
+
+      .option-btn {
+        font-size: 1rem;
+        padding: 14px;
+      }
+
+      .reset-set-btn {
+        top: 12px;
+        right: 12px;
+        font-size: 0.75rem;
+        padding: 7px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="menuContainer" class="menu-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:20px;">
+      <h1 id="mainTitle" style="margin:0;">Su Kirliliği Deneme Sınavı</h1>
+      <button onclick="clearAllStatistics()" style="background:#dc3545; color:white; border:none; padding:8px 10px; border-radius:8px; cursor:pointer; font-size:0.75rem;">
+        Verileri Sıfırla
+      </button>
+    </div>
+
+    <div id="menuGrid" class="menu-grid"></div>
+
+    <div class="disclaimer-box">
+      <span class="disclaimer-title">⚠️ Önemli Uyarı</span>
+      Bu sistemde yer alan içerikler yalnızca eğitim amaçlıdır. İçeriklerin kullanımından doğabilecek doğrudan veya dolaylı hiçbir sorumluluk kabul edilmez. Tüm kullanım sorumluluğu kullanıcıya aittir.
+    </div>
+  </div>
+
+  <div id="quizContainer" class="quiz-container">
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="header-info">
+      <div class="header-left">
+        <button onclick="showMenu()" class="main-menu-btn">☰ Ana Menü</button>
+        <span id="headerSubject" class="header-subject"></span>
+      </div>
+    </div>
+
+    <button onclick="resetCurrentSet()" class="reset-set-btn">Seti Sıfırla</button>
+
+    <div id="retryBadge" class="retry-badge">Yalnış cevaplanan soru</div>
+    <h2 id="questionText" class="question-title">...</h2>
+
+    <div id="optionsArea"></div>
+
+    <div class="quiz-footer">
+      <div id="footerLeft">Kalan: 0</div>
+      <div id="footerRight">0 / 0</div>
+    </div>
+
+    <div id="explanationArea" class="explanation"></div>
+
+    <div class="nav-controls">
+      <button id="prevBtn" class="nav-btn prev-btn" onclick="goBack()" style="visibility:hidden;">❮ Önceki</button>
+      <button id="nextBtn" class="nav-btn next-btn" onclick="goForward()" style="visibility:hidden;">Yeni Soru ❯</button>
+    </div>
+  </div>
+</div>
+
+<div class="source-tag" id="sourceTag">Kaynak: yapayzeka/ su_kirliligi_versiyon_1</div>
+
+<script>
+  const BASE_SUBJECT = "Su Kirliliği";
+  const VERSION_NUMBER = 1;
+
+  function buildVersionName(base, version) {
+    return `${base} Versiyon ${version}`;
+  }
+
+  function buildVersionSlug(base, version) {
+    return `${base.toLowerCase().replace(/ç/g, "c").replace(/ğ/g, "g").replace(/ı/g, "i").replace(/ö/g, "o").replace(/ş/g, "s").replace(/ü/g, "u").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")}_versiyon_${version}`;
+  }
+
+  const CURRENT_SUBJECT = BASE_SUBJECT;
+  const VERSION_SLUG = buildVersionSlug(BASE_SUBJECT, VERSION_NUMBER);
+  const SOURCE_TEXT = `Kaynak: yapayzeka/ su_kirliligi_versiyon_1`;
+  const QUESTIONS_PER_SET = 30;
+
+  const questions = [
+    {
+        "q": "Literatürde \"su kirliliği\" kavramı tanımlanırken, sadece suyun renginin değişmesi veya bulanması gibi basit fiziksel değişimlerle sınırlı kalınmaz. Aşağıdakilerden hangisi su kirliliğinin doğrudan veya dolaylı yollardan yarattığı olumsuz etkilerden biri olarak metinde sayılmamıştır?",
+        "o": [
+            "Ekolojik özelliklerin olumsuz yönde değişmesi",
+            "Atmosferdeki sera gazı oranının doğrudan artması",
+            "Balıkçılık faaliyetlerinde engelleyici bozulmalar yaratması",
+            "İnsan sağlığında bozulmalar yaratması"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Metinde su kirliliğinin tanımlamasında ekolojik özelliklerin değişmesi, balıkçılık faaliyetlerinin engellenmesi ve insan sağlığının bozulması geçmektedir; ancak sera gazı artışı ile ilgili bir ifade yoktur."
+    },
+    {
+        "q": "Su kalitesini değerlendirme ve izleme (monitoring) yaklaşımları arasındaki temel fark aşağıdakilerden hangisinde doğru ifade edilmiştir?",
+        "o": [
+            "İzleme sadece yeraltı sularında, değerlendirme ise yüzeysel sularda yapılır.",
+            "İzleme süreklilik arz ederken, değerlendirme genel bir durum tespitini kapsar.",
+            "Değerlendirme sadece laboratuvar ortamında, izleme ise biyolojik yöntemlerle yapılır.",
+            "İzleme kirlilik kontrol stratejilerinin başarısız olduğu durumlarda başlatılır."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Metne göre izleme (monitoring) süreklilik arz edip trendleri belirlerken, değerlendirme genel bir durum tespiti kapsar."
+    },
+    {
+        "q": "Biyolojik izleme yöntemi ile ilgili aşağıda verilen özelliklerden hangisi onun bir dezavantajı olarak metinde yer almaktadır?",
+        "o": [
+            "Kronik ve düşük düzeydeki kirlenmeye karşı iyi yanıt vermesi.",
+            "Biyoakümülasyon ve biyomagnifikasyon süreçlerini takip etme imkânı sunması.",
+            "Kirletici salınım çalışmaları için her zaman geçerliliğinin olmaması ve anlık deşarjı kaçırabilmesi.",
+            "Mevsimsel ve mekânsal entegrasyonu iyi sağlayarak uzun dönemli etkileri yansıtması."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Anlık kirletici salınımlarını ve deşarjları kaçırabilmesi biyolojik izlemenin avantajı değil, dezavantajı olarak metinde sıralanmıştır."
+    },
+    {
+        "q": "Aşağıdaki su izleme yöntemlerine ait özellikleri uygun olan başlıklarla eşleştiriniz. I. Düşük düzeyde mevsimsel değişim göstererek daha stabil veriler sunar. II. Biyodeneylerin standardizasyonu oldukça güçtür. III. Farklı derinliklerden su örneği almak zaman alıcıdır ve örnekleme maliyeti yüksektir. a) Biyolojik izlemenin dezavantajı b) Kimyasal izlemenin avantajı c) Kimyasal izlemenin dezavantajı",
+        "o": [
+            "I-b, II-a, III-c",
+            "I-a, II-c, III-b",
+            "I-b, II-c, III-a",
+            "I-c, II-b, III-a"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Kimyasal izleme stabil veri sunar (Avantaj). Biyodeneylerin standardizasyonunun güç olması biyolojik izlemenin dezavantajıdır. Derinliklerden su almak ve maliyetin yüksekliği kimyasal izlemenin dezavantajıdır."
+    },
+    {
+        "q": "Türkiye'de \"Yüzeysel Su Kalitesi Yönetimi Yönetmeliği\" kapsamında belirlenen su kalitesi kriterlerine göre, sucul yaşam için kritik olan pH değeri I. ve II. Sınıf sularda hangi aralıkta olmalıdır?",
+        "o": [
+            "5.5 - 7.5",
+            "6.0 - 9.0",
+            "6.5 - 8.5",
+            "7.0 - 10.0"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Metindeki yasal değerlendirme kriterlerine göre I. ve II. Sınıf sularda pH 6.5 - 8.5 aralığında olmalıdır."
+    },
+    {
+        "q": "Oksijenlendirme parametreleri, suyun biyolojik aktivitesi için en önemli göstergelerdir. Buna göre \"Çözünmüş Oksijen\" miktarı ile ilgili metinde verilen bilgi aşağıdakilerden hangisidir?",
+        "o": [
+            "I. Sınıf sularda en fazla 3 mg/L seviyesinde olmalıdır.",
+            "Kirlilik arttıkça bu değer düşer ve IV. Sınıf sularda <3 mg/L seviyesine iner.",
+            "II. Sınıf sularda organik oksidasyon için 70 mg/L gereklidir.",
+            "Mikroorganizmaların inorganik maddeleri parçalamasıyla artış gösterir."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Çözünmüş oksijen kirlilik arttıkça düşer ve IV. Sınıf sularda <3 mg/L seviyesine indiği metinde belirtilmiştir."
+    },
+    {
+        "q": "Nutrient (Besin Elementleri) parametreleri ve ötrofikasyon riski bağlamında, aşağıdakilerden hangisi oldukça toksik bir ara form olarak nitelendirilen ve I. Sınıf sularda <0.002 mg/L gibi çok düşük seviyelerde olması gereken maddedir?",
+        "o": [
+            "Amonyum Azotu",
+            "Nitrat Azotu",
+            "Toplam Fosfor",
+            "Nitrit Azotu"
+        ],
+        "c": 3,
+        "e": "Doğru cevap D - Nitrit Azotu metinde oldukça toksik bir ara form olarak tanımlanmış ve I. Sınıf sularda <0.002 mg/L olması gerektiği açıkça belirtilmiştir."
+    },
+    {
+        "q": "Aşağıdaki kıta içi su kaynakları sınıflarını ve kullanım maksatlarını eşleştiriniz. I. Sınıf I - Yüksek Kaliteli Su II. Sınıf II - Az Kirlenmiş Su III. Sınıf III - Kirlenmiş Su a) İleri veya uygun arıtma ile içme suyu olma potansiyeli olan yüzeysel sular. b) Gıda ve tekstil gibi kaliteli su gerektiren tesisler hariç, uygun arıtmadan sonra endüstriyel su olarak kullanılabilir. c) Sadece dezenfeksiyon ile içme suyu olma potansiyeli yüksek olan yüzeysel sular.",
+        "o": [
+            "I-c, II-a, III-b",
+            "I-a, II-c, III-b",
+            "I-c, II-b, III-a",
+            "I-b, II-a, III-c"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Sınıf I sadece dezenfeksiyonla içme suyu potansiyeli taşır. Sınıf II ileri arıtma gerektirir. Sınıf III uygun arıtmadan sonra endüstriyel su olarak kullanılabilir."
+    },
+    {
+        "q": "İz elementler (ağır metaller) grubunda yer alan ve çok zehirli olduğu belirtilen Cıva (Hg) için, I. Sınıf sularda belirlenen sınır değer aşağıdakilerden hangisidir?",
+        "o": [
+            "< 0.1 µg/L",
+            "< 2 µg/L",
+            "< 5 mg/L",
+            "< 10 µg/L"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Cıva çok zehirlidir ve I. Sınıf sularda < 0.1 µg/L olması gerektiği metinde detaylandırılmıştır."
+    },
+    {
+        "q": "Sınıf IV sular için metinde yapılan en kapsamlı değerlendirme aşağıdakilerden hangisidir?",
+        "o": [
+            "Alabalık dışında daha toleranslı balıkların üretimi için uygun olan sulardır.",
+            "Üst kalite sınıfına ancak ciddi rehabilitasyon çalışmaları ile ulaşabilecek, mevcut halleriyle kullanımları kısıtlı yüzeysel sulardır.",
+            "Sadece tarımsal sulama amacıyla kullanılan ve arıtma gerektirmeyen sulardır.",
+            "Çözünmüş oksijen oranının %90'ın üzerinde olduğu deniz sularıdır."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Sınıf IV sular metinde, ancak ciddi rehabilitasyon çalışmaları ile üst kalite sınıfına ulaşabilecek çok kirlenmiş sular olarak tanımlanmıştır."
+    },
+    {
+        "q": "Metne göre ağır metallerin fiziksel tanımı ve doğada bulunma şekilleri ile ilgili aşağıdakilerden hangisi doğrudur?",
+        "o": [
+            "Yoğunluğu 5 g cm⁻³’ten düşük olan elementlerdir.",
+            "Yerkürede genellikle karbonat, oksit, silikat ve sülfür halinde stabil bileşikler olarak bulunurlar.",
+            "Sadece insan faaliyetleri (antropojenik) sonucu doğada var olurlar.",
+            "Suya karışan ağır metallerin tamamı çözünerek su yüzeyinde kalır."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Metinde ağır metallerin yerkürede genellikle karbonat, oksit, silikat ve sülfür halinde stabil bileşikler olarak bulunduğu açıkça belirtilmiştir."
+    },
+    {
+        "q": "Sulara taşınan ağır metallerin su kolonundan uzaklaşma mekanizmalarıyla ilgili verilen ifadelerden hangisi metinden çıkarılamaz?",
+        "o": [
+            "Negatif yüklü kil mineralleri, pozitif yüklü metal katyonlarını çekerek çökelmeye neden olur.",
+            "Askıdaki parçacıkların yüzeyine fizikokimyasal olarak tutunma işlemine adsorpsiyon denir.",
+            "Metaller besin zincirinin üst basamaklarına çıkıldıkça biyomagnifikasyon süreciyle dokulardaki yoğunluklarını azaltırlar.",
+            "Suyu süzerek beslenen omurgasız canlılar, metalleri bünyelerinde yoğun şekilde biriktirirler."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Metne göre biyomagnifikasyon (biyolojik büyütme) süreciyle üst basamaklara çıkıldıkça dokulardaki yoğunluk azalmaz, aksine artar."
+    },
+    {
+        "q": "Aşağıdaki ağır metaller ile metinde bahsedilen özellikleri / vakaları eşleştiriniz. I. Cıva (Hg) II. Kurşun (Pb) III. Kadmiyum (Cd) a) Jintzu Nehri'nin kirlenmesiyle ortaya çıkan Itai-Itai hastalığına sebep olmuştur. b) Suda inorganik formdayken çok daha toksik olan organik metil formuna dönüşebilir ve Minamata felaketine yol açmıştır. c) Ekosisteme en çok zarar veren ilk metaldir ve kimyasal olarak kalsiyuma benzer davranış göstererek midyelerde birikir.",
+        "o": [
+            "I-b, II-c, III-a",
+            "I-a, II-b, III-c",
+            "I-b, II-a, III-c",
+            "I-c, II-b, III-a"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Itai-Itai hastalığı Kadmiyum (Cd) ile ilgilidir. Minamata vakası Cıva (Hg) ile ilgilidir. Kalsiyuma benzer davranarak biriken ilk metal ise Kurşun (Pb)'dur."
+    },
+    {
+        "q": "İnsan vücudu için belirli miktarda gerekli olsa da, yüksek dozlarda toksik etkiler gösteren Bakır (Cu) için Dünya Sağlık Örgütü (WHO) tarafından içme sularında belirlenen sınır değer aşağıdakilerden hangisidir?",
+        "o": [
+            "0.1 µg L⁻¹",
+            "2 µg L⁻¹",
+            "2 mg L⁻¹",
+            "10 mg L⁻¹"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Metinde Dünya Sağlık Örgütü'nün (WHO) içme sularında Bakır (Cu) için sınır değerini 2 mg L⁻¹ olarak belirlediği ifade edilmiştir."
+    },
+    {
+        "q": "Gemilerin dengesini sağlamak için tanklarına aldıkları ve limanlar arası taşındığında kirlilik transferine neden olan deniz suyuna ne ad verilir?",
+        "o": [
+            "Sintine Suları",
+            "Balast Suları",
+            "Dispersant Sular",
+            "Run-off Suları"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Gemilerin dengesini sağlamak için tanklarına aldıkları ve kirlilik transferine neden olan sulara \"Balast Suları\" denir."
+    },
+    {
+        "q": "Petrol kirliliğinin sucul ekosistem üzerindeki \"fiziksel örtü\" etkisi aşağıdakilerden hangisine doğrudan yol açmaz?",
+        "o": [
+            "Atmosfer ile su arasındaki gaz alışverişinin kesilmesine",
+            "Işığın alt katmanlara geçişinin engellenmesine",
+            "Suyun pH değerinin aniden bazik karaktere dönüşmesine",
+            "Işık azlığına bağlı olarak fotosentezin durmasına ve oksijen seviyesinin düşmesine"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Petrol kirliliğinin fiziksel örtü etkisi gaz alışverişini keser, ışık geçişini engeller, fotosentezi durdurur ve oksijen seviyesini düşürür. Suyun aniden bazik olması gibi bir etki metinde geçmez."
+    },
+    {
+        "q": "Aşağıdaki petrol temizleme yöntemlerini tanımlarıyla eşleştiriniz. I. Skimming (Mekanik Temizleme) II. Biyoremediasyon III. Dispersantlar (Kimyasal Dağıtıcılar) a) Petrolü besin kaynağı olarak kullanan bakterilerin ortama ekilmesi veya aktivitelerinin artırılmasıdır. b) Yüzeydeki petrolün özel gemi sistemleri ile sıyrılarak toplanmasıdır. c) Petrolü küçük damlacıklara bölerek (emülsiyon) su kolonuna dağıtmak için kullanılır.",
+        "o": [
+            "I-c, II-b, III-a",
+            "I-a, II-b, III-c",
+            "I-b, II-a, III-c",
+            "I-b, II-c, III-a"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Skimming gemi sistemleriyle sıyırmadır. Biyoremediasyon mikroorganizma kullanmaktır. Dispersantlar ise kimyasal dağıtıcılardır."
+    },
+    {
+        "q": "Metne göre, denize dökülen petrolün biyoremediasyon (mikroorganizma ekme) yöntemi kullanılarak parçalanma süresi doğal sürece göre nasıl bir değişim gösterir?",
+        "o": [
+            "Doğal süreçte 50 yıl süren parçalanma, 10 yıla düşer.",
+            "Doğal süreçte 5-10 yıl süren parçalanma, 2-5 yıla düşürülebilir.",
+            "Doğal süreçte 1-2 yıl süren parçalanma, birkaç aya iner.",
+            "Parçalanma süresi değişmez ancak denizin oksijen seviyesi anında artar."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Metinde, \"Doğal süreçte 5-10 yıl süren parçalanma, bu yöntemle 2-5 yıla düşürülebilir.\" ifadesi doğrudan geçmektedir."
+    },
+    {
+        "q": "Pestisitlerin su ve toprak yoluyla taşınımında (yüzey akışı veya süzülme) etkili olan ve pestisitin toprakta tutulmasını ya da taşınmasını belirleyen özellikler arasında aşağıdakilerden hangisi metinde sayılmamıştır?",
+        "o": [
+            "Toprağın kil yapısı",
+            "Toprağın pH değeri",
+            "Toprağın organik madde içeriği",
+            "Toprağın deniz seviyesinden yüksekliği"
+        ],
+        "c": 3,
+        "e": "Doğru cevap D - Metinde pestisitin toprakta tutulmasını veya taşınmasını belirleyen faktörler olarak toprağın kil yapısı, pH'ı ve organik madde içeriği sayılmıştır. Yükseklik yer almaz."
+    },
+    {
+        "q": "Stockholm Konvansiyonu ile kullanımı yasaklanan, yüksek oranda lipofilik (yağda çözünen) olup parçalanmaya karşı son derece dirençli olan pestisit türü aşağıdakilerden hangisidir?",
+        "o": [
+            "Aldrin",
+            "Dispersant",
+            "DDT",
+            "Dieldrin"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - DDT'nin özellikleri başlığı altında, yüksek oranda lipofilik olduğu ve parçalanmaya karşı dirençli olduğu metinde vurgulanmıştır (Aldrin ve Dieldrin de yasaklanmıştır ancak lipofilik detayları doğrudan DDT'nin özelliklerinde verilmiştir)."
+    },
+    {
+        "q": "Sabun ve deterjanların su ortamındaki temizleme performansları ile ilgili metinde verilen temel fark aşağıdakilerden hangisidir?",
+        "o": [
+            "Sabunlar her türlü su koşulunda etkiliyken, deterjanlar sadece sıcak sularda etkilidir.",
+            "Sabunlar özellikle sert veya asidik sularda efektif temizlik sağlayamazken, deterjanlar sentetik yapıları sayesinde her türlü su koşulunda etkilidir.",
+            "Sabunlar 1930'larda geliştirilmiş sentetik ajanlar olup, deterjanlar tarihsel olarak daha eskidir.",
+            "Deterjanlar sadece yağlı kirlerde etki gösterirken, sabunlar protein bazlı kirleri çözer."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Sabunlar sert veya asidik sularda efektif temizlik sağlayamazken, deterjanlar formülasyonları sayesinde her türlü su koşulunda etkilidir."
+    },
+    {
+        "q": "Deterjanların düşük konsantrasyonlarda dahi suyun yüzey gerilimini azaltan bileşenlerine ne ad verilir?",
+        "o": [
+            "Methemoglobin",
+            "Nitrosamin",
+            "Surfaktan (Yüzey aktif madde)",
+            "Dedosilbenzen sülfonat (DDB)"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Suyun yüzey gerilimini azaltan maddelere \"yüzey aktif maddeler\" veya \"surfaktan\" denir."
+    },
+    {
+        "q": "Yüzey aktif maddelerin (surfaktanların) su yüzeyinde oluşturduğu köpük tabakasının sucul ekosisteme verdiği en temel zarar aşağıdakilerden hangisidir?",
+        "o": [
+            "Suyun pH değerini aniden yükselterek bazik şoka neden olması.",
+            "Atmosfer ile su arasındaki gaz alışverişini engelleyerek oksijen konsantrasyonunu düşürmesi.",
+            "Su tabanındaki ağır metalleri çözerek yüzeye taşıması.",
+            "Güneş ışığını yansıtarak su sıcaklığını aşırı derecede düşürmesi."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Metne göre köpük tabakası atmosfer ile su arasındaki gaz alışverişini engelleyerek oksijen konsantrasyonunu düşürür."
+    },
+    {
+        "q": "Deterjanların alıcı ortamlardaki en kritik etkisi olan ötrofikasyonun tetiklenmesi için metinde belirtilen sınır fosfor değeri (veya yıllık yükü) aşağıdakilerden hangisidir?",
+        "o": [
+            "0.1 mg L⁻¹ fosfor veya yıllık 0.1 g m⁻² fosfor yükü",
+            "0.4-3 mg L⁻¹ fosfor veya yıllık 0.5 g m⁻² fosfor yükü",
+            "5-10 mg L⁻¹ fosfor veya yıllık 2 g m⁻² fosfor yükü",
+            "50 mg L⁻¹ fosfor veya yıllık 10 g m⁻² fosfor yükü"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Ötrofikasyonun tetiklenmesi için sınır değer 0.1 mg L⁻¹ fosfor veya yıllık 0.1 g m⁻² fosfor yüküdür."
+    },
+    {
+        "q": "Aşağıdaki deterjan tiplerini metinde belirtilen çevresel özellikleri ile eşleştiriniz. I. Yumuşak (Soft) Deterjanlar II. Sert (Hard) Deterjanlar a) Dallanmış halkalı zincir yapısına sahip oldukları için çok zor parçalanırlar veya hiç parçalanamazlar. b) Düz zincirli alkil sülfonatlardır ve doğada mikroorganizmalar tarafından parçalanabilirler (biodegradasyon). c) Sadece endüstriyel soğutma sularında kullanılırlar.",
+        "o": [
+            "I-b, II-a",
+            "I-a, II-b",
+            "I-b, II-c",
+            "I-c, II-a"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Yumuşak deterjanlar düz zincirlidir ve mikroorganizmalarca parçalanır (biodegradasyon). Sert deterjanlar ise dallanmış yapıdadır ve parçalanamazlar."
+    },
+    {
+        "q": "Metne göre, saniyede 50 m³ ısınmış soğutma suyu deşarj ederek ciddi termal kirliliğe yol açabilen tesis aşağıdakilerden hangisine örnek olarak verilmiştir?",
+        "o": [
+            "Demir-çelik fabrikası",
+            "1000 MW kapasiteli bir nükleer santral",
+            "Klor-alkali fabrikası",
+            "Rafineri tesisi"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Metinde 1000 MW kapasiteli bir nükleer santralin saniyede 50 m³ ısınmış soğutma suyu deşarj edebileceği örnek verilmiştir."
+    },
+    {
+        "q": "Doğal su ortamında termal deşarjlar nedeniyle sıcaklık artışının 3-5°C civarında olması durumunda sucul ekosistemde görülen değişimlerle ilgili aşağıdakilerden hangisi doğrudur?",
+        "o": [
+            "Makrobentik organizmalar tamamen kaybolur ve balık yoğunluğu yarı yarıya düşer.",
+            "Hem dar sıcaklık aralığına toleranslı hem de sıcağı seven tüm alg türleri ortamı terk eder.",
+            "Mavi-yeşil algler gibi sıcağı seven türler artarken, kahverengi-kırmızı algler gibi dar sıcaklık aralığına toleranslı türler ölür veya ortamı terk eder.",
+            "Tür çeşitliliği artarak ekosistem çok daha verimli hale gelir."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - 3-5°C'lik artış mavi-yeşil algler gibi sıcağı seven (termofilik) türleri artırırken, kahverengi-kırmızı algler gibi dar toleranslı (stenotermal) türlerin ölümüne neden olur. (Makrobentik canlıların yok olması 5°C üzeri artışta görülür)."
+    },
+    {
+        "q": "Toprakta organik azot kaynaklarının mikroorganizmalar aracılığıyla inorganik formlara dönüşürken izlediği, sırasıyla amonyum azotundan (NH₄⁺-N) nitrata (NO₃⁻) dönüşüm sürecine ne ad verilir?",
+        "o": [
+            "Biyoakümülasyon",
+            "Nitrifikasyon",
+            "Biyoremediasyon",
+            "Biodegradasyon"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Amonyum azotunun nitrata dönüşüm süreci metinde \"nitrifikasyon\" olarak isimlendirilmiştir."
+    },
+    {
+        "q": "Tarımsal alanlarda kullanılan nitrat azotunun taban suyuna sızması veya yüzey akışlarıyla nehir ve göllere kolayca taşınmasının temel nedeni metinde nasıl açıklanmıştır?",
+        "o": [
+            "Nitrat azotunun ağır metal iyonlarıyla birleşerek çökelti oluşturması.",
+            "Yüksek oranda lipofilik (yağda çözünen) bir madde olması.",
+            "Toprak parçacıklarına tutunmayan, oldukça hareketli bir iyon olması.",
+            "Güneş ışığı altında hızla buharlaşarak atmosfere karışması."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Nitrat azotunun toprak parçacıklarına tutunmadığı için oldukça hareketli bir iyon olduğu ve bu yüzden kolayca yıkandığı belirtilmiştir."
+    },
+    {
+        "q": "İçme sularında bulunan yüksek miktardaki (5-10 mg L⁻¹ üzeri) nitratın, 6 aydan küçük bebeklerde kandaki hemoglobine bağlanarak oksijen taşıma kapasitesini düşürmesi sonucu ortaya çıkan hastalık aşağıdakilerden hangisidir?",
+        "o": [
+            "Itai-Itai Hastalığı",
+            "Minamata Hastalığı",
+            "Methemoglobinemia (Mavi Bebek Sendromu)",
+            "Nitrosamin Sendromu"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Nitritin hemoglobine bağlanarak oksijen taşınmasını engellemesiyle bebeklerde oluşan hastalık Methemoglobinemia (Mavi Bebek Sendromu)'dır."
+    },
+    {
+        "q": "Temiz atmosferdeki doğal yağmur suyunun içinde çözünmüş halde bulunan karbondioksit (CO₂) nedeniyle sahip olduğu doğal pH değeri ile asit yağmuru olarak kabul edilen sınır değer aşağıdakilerden hangisinde doğru verilmiştir?",
+        "o": [
+            "Doğal yağmur pH: 7.0 / Asit yağmuru sınırı: < 6.5",
+            "Doğal yağmur pH: 5.6 / Asit yağmuru sınırı: < 5.6",
+            "Doğal yağmur pH: 6.5 / Asit yağmuru sınırı: < 5.0",
+            "Doğal yağmur pH: 8.0 / Asit yağmuru sınırı: < 7.0"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Metne göre, temiz yağmurun pH'ı atmosferdeki CO₂ çözünmesiyle 5.6'dır. pH'ın 5.6'nın altına inmesi asit yağmuru olarak tanımlanır."
+    },
+    {
+        "q": "Fosil yakıtların yanması sonucu atmosfere salınan ve su buharıyla reaksiyona girerek asit yağışlarını oluşturan iki temel kirletici gaz metinde aşağıdakilerden hangisi olarak belirtilmiştir?",
+        "o": [
+            "Karbonmonoksit (CO) ve Metan (CH₄)",
+            "Kloroflorokarbon (CFC) ve Ozon (O₃)",
+            "Kükürt dioksit (SO₂) ve Azot oksitler (NOx)",
+            "Amonyak (NH₃) ve Hidrojen sülfür (H₂S)"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Asit yağmurlarının temel nedeni fosil yakıtlardan çıkan Kükürt dioksit (SO₂) ve Azot oksitlerdir (NOx)."
+    },
+    {
+        "q": "Asit yağmurlarının sucul ekosistemler üzerindeki dolaylı ve en yıkıcı etkilerinden biri \"Alüminyum toksisitesi\"dir. Metne göre bu durumun işleyiş mekanizması aşağıdakilerden hangisidir?",
+        "o": [
+            "Asit yağmuru, su yüzeyindeki alüminyum tabakasını buharlaştırarak balıkların zehirli gaz solumasına neden olur.",
+            "Asitli sular, toprakta tutunan ve normalde zararsız olan alüminyumu çözerek göllere taşır; bu alüminyum balıkların solungaçlarında birikerek boğulmalarına yol açar.",
+            "Asit yağmurları göldeki alüminyumu çökelterek dipte yaşayan makrobentik canlıların üzerini kaplar.",
+            "Suda artan asit, alüminyumun oksijenle birleşmesini engelleyerek suyun oksijen seviyesini sıfıra indirir."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Asit yağmurları topraktaki alüminyumu çözerek suya taşır; bu alüminyum balıkların solungaçlarında mukus artışına neden olarak onları boğar."
+    },
+    {
+        "q": "Aşağıdaki su kütlelerinden hangisinin asit yağmurlarına karşı direnç (tamponlama) gösterme kapasitesi metne göre daha yüksektir?",
+        "o": [
+            "Kireçtaşı yatakları üzerinde bulunan ve alkalinite (karbonat/bikarbonat) seviyesi yüksek olan göller.",
+            "Granit ve kuvars kayalıkları üzerinde yer alan, yumuşak sulara sahip göller.",
+            "Organik madde içeriği tamamen sıfırlanmış olan dağ gölleri.",
+            "Ağır metal kirliliğinin çok yüksek olduğu sığ göletler."
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Kireçtaşı yataklarındaki göller yüksek karbonat/bikarbonat içeriği (yüksek alkalinite/tamponlama kapasitesi) sayesinde asit yağmurlarına daha dirençlidir."
+    },
+    {
+        "q": "Radyoaktif maddelerin yaydığı ışımalarla (radyasyon) ilgili aşağıdaki eşleştirmelerden hangisi metindeki bilgilere göre yanlıştır?",
+        "o": [
+            "Alfa Işıması: Giriciliği en düşük olan, bir kağıt parçasıyla bile durdurulabilen ışımadır.",
+            "Beta Işıması: Alfa ışımalarına göre daha girici olup, ince bir alüminyum levha ile durdurulabilir.",
+            "Gama Işıması: Elektromanyetik dalga formundadır, giriciliği çok yüksektir ve ancak kalın kurşun veya beton bloklarla durdurulabilir.",
+            "Alfa Işıması: Suyun kilometrelerce derinliğine ulaşabilen ve sadece ağır metaller tarafından emilen ışımadır."
+        ],
+        "c": 3,
+        "e": "Doğru cevap D - Alfa ışıması en düşük giriciliğe sahip olan ışımadır, kilometrelerce derine inemez. Bu yüzden D şıkkı yanlıştır."
+    },
+    {
+        "q": "Nükleer fisyon sonucu oluşan radyoaktif izotopların besin zincirindeki birikim organları aşağıdakilerden hangisinde doğru eşleştirilmiştir? I. Stronsiyum-90 (Sr-90) II. Sezyum-137 (Cs-137) III. İyot-131 (I-131) a) Tiroid bezinde birikir. b) Kalsiyuma benzediği için kemiklerde ve iskelet yapısında birikir. c) Potasyuma benzediği için kas dokularında birikir.",
+        "o": [
+            "I-b, II-c, III-a",
+            "I-c, II-b, III-a",
+            "I-b, II-a, III-c",
+            "I-a, II-b, III-c"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Sr-90 kemikte (kalsiyum benzeri), Cs-137 kas dokularında (potasyum benzeri) ve I-131 tiroid bezinde birikir."
+    },
+    {
+        "q": "Radyoaktif bir maddenin, başlangıçtaki atom sayısının veya aktivitesinin radyoaktif bozunma sonucu tam yarısına inmesi için geçen süreye ne ad verilir?",
+        "o": [
+            "Biyomagnifikasyon süresi",
+            "Yarı ömür (Half-life)",
+            "Bozunma kotası",
+            "Radyoaktif tolerans sınırı"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Radyoaktif bir maddenin aktivitesinin yarıya düşmesi için geçen süreye \"Yarı ömür\" denir."
+    },
+    {
+        "q": "Su ortamına karışan radyoaktif maddelerin ekolojik etkileri değerlendirildiğinde, besin zincirinin üst basamaklarında yer alan canlılarda (örneğin yırtıcı balıklarda) sudaki konsantrasyonun çok daha üzerinde radyoaktivite tespit edilmesinin temel nedeni metinde nasıl açıklanmıştır?",
+        "o": [
+            "Balıkların radyoaktif maddeleri doğrudan üretmesi.",
+            "Radyoaktif izotopların beslenme yoluyla vücuda alınıp atılamaması sonucu oluşan biyoakümülasyon (biyolojik birikim) süreci.",
+            "Asit yağmurlarının radyoaktif maddeleri aktive etmesi.",
+            "Yırtıcı balıkların yüzey aktif maddeleri (surfaktan) tüketmesi."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Radyoaktif izotopların besin zinciri boyunca canlı dokularında birikerek artmasına biyoakümülasyon (biyolojik birikim) denir."
+    },
+    {
+        "q": "Asit yağışlarının yapısal ve çevresel etkilerini uygun kavramlarla eşleştiriniz. I. Tarihi eserler ve binalar II. Ormanlık alanlar III. İnsan sağlığı a) Topraktaki besin elementlerini (Kalsiyum, Magnezyum) yıkayarak ağaçların zayıflamasına ve kurumasına neden olur. b) Özellikle kireç taşı ve mermerden yapılmış yüzeylerde aşınmaya ve bozulmaya (korozyon) yol açar. c) Havada asılı kalan sülfat ve nitrat partiküllerinin solunmasıyla solunum yolu hastalıklarını tetikler.",
+        "o": [
+            "I-c, II-b, III-a",
+            "I-b, II-a, III-c",
+            "I-a, II-c, III-b",
+            "I-b, II-c, III-a"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Binalar aşınır (b), ormanlarda besin elementleri yıkanır (a), insanlarda solunum hastalıkları tetiklenir (c)."
+    },
+    {
+        "q": "Radyoaktif kirlilik kaynakları arasında aşağıdakilerden hangisi doğrudan antropojenik (insan kaynaklı) bir kirlilik unsuru olarak metinde yer almaz?",
+        "o": [
+            "Nükleer enerji santrallerinde meydana gelen sızıntılar ve kazalar (Ör: Çernobil).",
+            "Tıbbi teşhis ve tedavilerde kullanılan radyoaktif izotop atıkları.",
+            "Yerkabuğundaki uranyum madenlerinden sızan doğal radon gazı salınımı.",
+            "Nükleer silah denemeleri sonucu atmosfere karışan serpintiler."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Doğal radon gazı salınımı, insan faaliyetleri dışındaki (doğal) radyoaktif kaynaklar arasında değerlendirilir. Diğerleri tamamen antropojenik (insan kaynaklı) süreçlerdir."
+    },
+    {
+        "q": "Endüstriyel atıksuların genel özellikleri evsel atıksularla kıyaslandığında, aşağıdakilerden hangisi endüstriyel atıksuları tanımlayan doğru bir ifade değildir?",
+        "o": [
+            "Sektörden sektöre ve hatta aynı sektördeki fabrikalar arasında bile kirlilik parametreleri açısından büyük farklılıklar gösterirler.",
+            "Debi, pH ve kirlilik yükü açısından gün içinde evsel atıksulara göre çok daha yüksek dalgalanmalar yaşarlar.",
+            "Tamamı biyolojik arıtma sistemlerinde evsel atıksulara göre çok daha hızlı ve kolay bir şekilde arıtılabilir.",
+            "Genellikle içerdikleri toksik maddeler veya inorganik yükler nedeniyle ön arıtma gerektirirler."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Tüm endüstriyel atıksular biyolojik olarak kolay arıtılamaz. Örneğin metal, kimya veya tekstil atıksuları yüksek toksisite ve parçalanamayan organik maddeler içerdiği için fizikokimyasal arıtma (ön arıtma) gerektirir."
+    },
+    {
+        "q": "Et, süt, maya ve şeker üretim tesislerini kapsayan gıda endüstrisi atıksularının en belirgin kimyasal/biyolojik karakteristiği metinde aşağıdakilerden hangisi olarak ifade edilmiştir?",
+        "o": [
+            "Siyanür ve ağır metal derişimlerinin diğer tüm sektörlerden yüksek olması.",
+            "Organik madde içeriğinin (BOİ ve KOİ) çok yüksek olması ve biyolojik olarak kolay parçalanabilmesi.",
+            "Biyolojik arıtmayı tamamen durduran yüksek dozda radyoaktif izotop içermesi.",
+            "Lignin içeriği nedeniyle siyah renkli, biyolojik olarak parçalanamayan atıksular olmaları."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Gıda endüstrisi (et, süt, şeker) atıksularının en belirgin özelliği çok yüksek organik madde (BOİ/KOİ) içermeleri ve biyolojik olarak kolay parçalanabilmeleridir."
+    },
+    {
+        "q": "Kağıt ve selüloz endüstrisinde kağıt hamurunun üretimi ve ağartılması (bleaching) işlemleri sırasında ortaya çıkan, doğada çok zor parçalanan ve toksik etki yaratan klorlu organik bileşiklerin genel adı (kısaltması) aşağıdakilerden hangisidir?",
+        "o": [
+            "BOİ",
+            "KOİ",
+            "AOX",
+            "DDB"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Kağıt hamurunun ağartılması (klorlanması) sırasında oluşan klorlu organik bileşiklerin genel kısaltması AOX'tir."
+    },
+    {
+        "q": "Odunun yapısında bulunan, kağıt üretimi sırasında atıksuya geçerek suyun rengini koyulaştıran ve ışık geçirgenliğini azaltarak fotosentezi engelleyen organik bileşik aşağıdakilerden hangisidir?",
+        "o": [
+            "Selüloz",
+            "Siyanür",
+            "Lignin",
+            "Methemoglobin"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Odunun yapısında bulunan ve kağıt üretiminde suya geçerek koyu renk oluşturan madde Lignin'dir."
+    },
+    {
+        "q": "Tekstil sanayisi atıksuları için metinde yapılan temel değerlendirmelerden hangisi yanlıştır?",
+        "o": [
+            "Kullanılan boyar maddeler nedeniyle alıcı ortamda estetik olmayan renk kirliliğine yol açarlar.",
+            "Yıkama ve terbiye işlemlerinden dolayı atıksu sıcaklıkları ve pH değerleri genellikle yüksektir.",
+            "Sadece organik pamuk kullanıldığı için atıksularında hiçbir sentetik kimyasal bulunmaz.",
+            "Alıcı ortama deşarjları ışık geçirgenliğini azaltarak sucul bitkilerin gelişimini engeller."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Tekstil sanayisinde yıkama, boyama ve terbiye aşamalarında bol miktarda sentetik kimyasal ve sentetik boyar madde kullanılır. C şıkkı metindeki gerçeklikle ve sektörün özellikleriyle uyuşmaz."
+    },
+    {
+        "q": "Aşağıdaki endüstri dallarını ürettikleri karakteristik kirlilik parametreleriyle eşleştiriniz. I. Deri Sanayisi II. Metal Kaplama (Galvaniz) Sanayisi III. Gıda Sanayisi a) Yüksek oranda yağ-gres, azot ve fosfor b) Toksik krom (Cr) bileşikleri ve sülfür c) Siyanür, asitler ve ağır metaller (Ni, Zn)",
+        "o": [
+            "I-b, II-c, III-a",
+            "I-a, II-b, III-c",
+            "I-c, II-a, III-b",
+            "I-b, II-a, III-c"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Deri sanayisi krom ve sülfür (b), Metal kaplama siyanür ve ağır metaller (c), Gıda sanayisi yağ-gres ve yüksek organik madde (a) üretir."
+    },
+    {
+        "q": "Petrol rafinerileri ve petrokimya tesislerinden kaynaklanan endüstriyel kirlenmede, toksik etkileri çok yüksek olan ve sucul canlılarda doğrudan zehirlenmeye yol açan başlıca kirletici grupları aşağıdakilerden hangileridir?",
+        "o": [
+            "Sadece organik karbonhidratlar",
+            "Fenoller ve petrol hidrokarbonları",
+            "Boyar maddeler ve lignin",
+            "Nitrat ve fosfat gübreleri"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Petrokimya ve rafineri atıksularının en karakteristik toksik kirleticileri Fenol bileşikleri ve hidrokarbonlardır."
+    },
+    {
+        "q": "Gıda endüstrisinde, özellikle süt işleme tesislerinde (mandıra) peynir üretimi sonucu açığa çıkan, asidik karakterde ve tek başına gölleri ötrofikasyona veya oksijensizliğe sürükleyecek kadar yüksek kirlilik yüküne sahip olan atık sıvıya ne ad verilir?",
+        "o": [
+            "Sintine suyu",
+            "Peynir altı suyu (Whey)",
+            "Balast suyu",
+            "Selüloz çamuru"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Süt işleme tesislerinde açığa çıkan çok yüksek KOİ/BOİ yüküne sahip asidik sıvıya Peynir altı suyu (Whey) denir."
+    },
+    {
+        "q": "Biyokimyasal Oksijen İhtiyacı (BOİ) ile Kimyasal Oksijen İhtiyacı (KOİ) oranının (BOİ/KOİ) yorumlanması endüstriyel atıksular için kritik öneme sahiptir. Metne göre bu oranın 0.5 ve üzerinde (yüksek) olması atıksu hakkında hangi bilgiyi verir?",
+        "o": [
+            "Atıksuyun çok zehirli olduğunu ve biyolojik olarak kesinlikle arıtılamayacağını.",
+            "Atıksuyun tamamen inorganik maddelerden (ağır metaller) oluştuğunu.",
+            "Atıksudaki organik maddelerin mikroorganizmalar tarafından kolayca parçalanabileceğini (biyolojik arıtılabilirliğin yüksek olduğunu).",
+            "Suda sadece klorlu organik bileşiklerin (AOX) bulunduğunu."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - BOİ/KOİ oranının 0.5 ve üzeri olması, o endüstriyel atıksudaki organik kirliliğin mikroorganizmalar tarafından rahatça tüketilebileceğini (iyi biyolojik arıtılabilirlik) gösterir."
+    },
+    {
+        "q": "Endüstri tesislerinin, atıksularını kentsel kanalizasyon sistemine deşarj etmeden önce, atıksu arıtma tesisine veya kanalizasyon şebekesine zarar verecek (örneğin aşırı asidik, toksik veya ağır metal içeren) maddeleri uzaklaştırmak için kendi bünyelerinde kurmak zorunda oldukları tesise ne isim verilir?",
+        "o": [
+            "İleri biyolojik arıtma tesisi",
+            "Ön arıtma tesisi",
+            "Deniz deşarj hattı",
+            "Soğutma kulesi"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Endüstrilerin kanalizasyon sistemini ve ana arıtma tesisini korumak için zehirli/zararlı maddeleri deşarj öncesi kendi bünyelerinde giderme işlemine \"ön arıtma\" denir."
+    },
+    {
+        "q": "Su ürünleri yetiştiriciliğinde, özellikle açık sistem ağ kafes tesislerinde, suya doğrudan karışarak en büyük organik kirlilik yükünü (BOİ ve KOİ artışını) oluşturan iki temel faktör metinde aşağıdakilerden hangisi olarak belirtilmiştir?",
+        "o": [
+            "Sentetik boyar maddeler ve ağır metaller",
+            "Yenmeyen yemler (yem israfı) ve balık dışkıları (feces)",
+            "Sintine suları ve balast deşarjları",
+            "Soğutma suları ve radyoaktif izotoplar"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Kafes sistemlerinin en büyük organik kirlilik kaynağı, doğrudan suya dökülen yenmeyen yemler ve balık dışkılarıdır."
+    },
+    {
+        "q": "Kafes altındaki deniz tabanında (bentik bölgede) biriken organik maddelerin (dışkı ve yem artıkları) parçalanması sırasında oksijenin tamamen tükenmesi (anoksik koşullar) sonucu açığa çıkan ve sucul canlılar için oldukça zehirli olan gaz aşağıdakilerden hangisidir?",
+        "o": [
+            "Ozon (O₃)",
+            "Hidrojen sülfür (H₂S)",
+            "Karbonmonoksit (CO)",
+            "Kükürt dioksit (SO₂)"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Bentik bölgede (tabanda) biriken organik maddenin oksijensiz ortamda (anoksik) çürümesi sonucu toksik Hidrojen sülfür (H₂S) gazı oluşur."
+    },
+    {
+        "q": "Su ürünleri yetiştiriciliğinde ötrofikasyon riskini artıran temel elementler Azot (N) ve Fosfor (P)'dur. Bu iki elementin su ortamına asıl giriş yolu aşağıdakilerden hangisidir?",
+        "o": [
+            "Sadece ölen balıkların çürümesi",
+            "Balık yemlerinin formülasyonunda yüksek oranda bulunmaları ve sindirilmeyen kısımlarının dışkı yoluyla suya geçmesi",
+            "Kullanılan antibiyotiklerin parçalanma ürünleri olmaları",
+            "Ağları temizlemek için kullanılan deterjanlar"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Azot ve fosfor, yemlerin formülasyonunda bulunur ve balıkların bunları tam sindirememesi sonucu dışkı veya yenmeyen yem olarak suya geçer."
+    },
+    {
+        "q": "Kafes ağlarının deniz canlıları (yosun, midye vb.) tarafından kaplanarak su sirkülasyonunun engellenmesini önlemek amacıyla kullanılan ve sulara ağır metal (özellikle bakır) salınımına neden olan kimyasallara/boyalara ne ad verilir?",
+        "o": [
+            "Antifouling maddeler",
+            "Surfaktanlar (Yüzey aktif maddeler)",
+            "Dispersantlar",
+            "Lignin bileşikleri"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Ağların yosun ve midyelerle kaplanmasını önlemek için kullanılan ve bakır (ağır metal) içeren koruyucu boyalara/maddelere Antifouling denir."
+    },
+    {
+        "q": "Kafeslerden (kültür ortamından) doğaya kaçan balıkların doğal ekosistem üzerinde yarattığı \"Genetik Kirlilik\" kavramının metindeki açıklaması aşağıdakilerden hangisidir?",
+        "o": [
+            "Kaçan balıkların doğal türleri yiyerek ortamdaki gen sayısını azaltması.",
+            "Kaçan balıkların genetik modifikasyona uğramış olması ve zehir salgılaması.",
+            "Kültür koşullarına uyum sağlamış ve genetik çeşitliliği daralmış balıkların, yabani (doğal) bireylerle çiftleşerek doğal popülasyonun gen havuzunu bozması.",
+            "Kaçan balıkların radyasyona maruz kalarak mutasyon geçirmesi."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Kültür balıklarının doğaya kaçarak genetik çeşitliliği yüksek olan yabani türlerle çiftleşmesi, doğal gen havuzunun bozulmasına (Genetik Kirlilik) neden olur."
+    },
+    {
+        "q": "Aşağıdaki su ürünleri yetiştiriciliği kimyasallarını kullanım amaçlarıyla eşleştiriniz. I. Antibiyotikler II. Malasit Yeşili / Formalin III. Antifouling Boyalar a) Kafes ağlarında biyolojik birikimi (kirlenmeyi) engellemek. b) Balıklarda görülen bakteriyel enfeksiyonları tedavi etmek. c) Mantar ve dış parazit enfeksiyonlarına karşı dezenfektan olarak kullanmak.",
+        "o": [
+            "I-c, II-b, III-a",
+            "I-b, II-a, III-c",
+            "I-b, II-c, III-a",
+            "I-a, II-b, III-c"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Antibiyotikler bakteriyel hastalıklarda (b), Malasit yeşili mantar/parazit için (c), Antifouling boyalar ağ kirlenmesini önlemek için (a) kullanılır."
+    },
+    {
+        "q": "Yetiştiricilikte yemleme stratejisi büyük önem taşır. \"Yem Dönüşüm Oranı\" (FCR - Feed Conversion Ratio) değerinin yüksek olması, çevresel açıdan ne anlama gelmektedir?",
+        "o": [
+            "Balığın yemi çok iyi değerlendirdiğini ve kirliliğin sıfıra indiğini gösterir.",
+            "Kullanılan yemin büyük bir kısmının balık etine dönüşemeyip dışkı veya yenmeyen yem olarak çevreye atıldığını (kirliliğin arttığını) gösterir.",
+            "Suyun oksijen kapasitesinin en yüksek seviyeye ulaştığını ifade eder.",
+            "Kafesteki balıkların tamamen hastalıklardan arındığını gösterir."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Yem dönüşüm oranının (FCR) yüksek olması, verilen yemin balık etine dönüşme veriminin düşük olduğu ve israf edilerek kirliliğe dönüştüğü anlamına gelir."
+    },
+    {
+        "q": "Su ürünleri yetiştiriciliği sırasında oluşan Askıda Katı Madde (AKM) artışının, su ortamındaki fotosentetik canlılar (fitoplankton ve deniz çayırları) üzerindeki en belirgin olumsuz etkisi aşağıdakilerden hangisidir?",
+        "o": [
+            "Su sıcaklığını artırarak termal şoka neden olması.",
+            "Işık geçirgenliğini azaltarak bu canlıların fotosentez yapmasını engellemesi.",
+            "Suyun pH'ını aniden yükselterek bazik karaktere çevirmesi.",
+            "Suyu aşırı asidik hale getirerek alüminyum toksisitesi yaratması."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Askıda Katı Maddelerin (AKM) artması, suyun bulanıklığını artırır ve ışığın alt katmanlara geçişini engelleyerek fotosentezi durdurur."
+    },
+    {
+        "q": "Metne göre, kültür balıkçılığında yoğun stoklama (dar alanda çok balık bulundurma) yapılmasının dolaylı olarak su kirliliğini artırmasının nedeni aşağıdakilerden hangisidir?",
+        "o": [
+            "Yoğun stoklamanın balıklarda stres yaratarak hastalık riskini artırması ve bunun sonucunda çok daha fazla kimyasal (antibiyotik/dezenfektan) kullanımına mecbur kalınması.",
+            "Balıkların birbirlerine çarparak suyun bulanıklığını fiziksel olarak artırması.",
+            "Çok fazla balığın suyu içerek gölün veya koyun su seviyesini düşürmesi.",
+            "Stoklama yoğunlaştıkça balıkların daha az yem tüketerek yemi tamamen israf etmesi."
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Yoğun stoklama balıkta stresi ve hastalığı artırır; bu da tesisin daha fazla ilaç ve kimyasal (antibiyotik, vb.) kullanmasına, dolayısıyla kirliliğin artmasına sebep olur."
+    },
+    {
+        "q": "Su ürünleri yetiştiriciliğinde uzun yıllar mantar ve parazitlere karşı etkin bir şekilde kullanılan, ancak sucul organizmalarda kalıntı bıraktığı ve insanlarda kanserojen/mutajenik etkileri kanıtlandığı için günümüzde kullanımı yasaklanan veya çok sıkı kısıtlanan kimyasal madde aşağıdakilerden hangisidir?",
+        "o": [
+            "Sodyum klorür",
+            "Kalsiyum karbonat",
+            "Malasit Yeşili",
+            "Potasyum permanganat"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Metinde, kanserojen/mutajenik olduğu için kullanımı yasaklanan meşhur mantar/parazit kimyasalının Malasit Yeşili olduğu belirtilmiştir."
+    },
+    {
+        "q": "Metne göre, okyanus ve denizlerdeki toplam kirliliğin kaynak bazında oransal dağılımı incelendiğinde, en büyük kirlilik payı aşağıdakilerden hangisine aittir?",
+        "o": [
+            "Tanker kazaları sonucu oluşan petrol sızıntılarına",
+            "Gemi balast sularının kontrolsüz deşarjına",
+            "Nehirler, evsel/endüstriyel boru hatları ve tarımsal akışları içeren karasal kaynaklara (%70-80 oranında)",
+            "Açık deniz petrol arama platformlarındaki sondaj çamurlarına"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Metinde deniz kirliliğinin çok büyük bir bölümünün (%70-80) karasal kaynaklı deşarjlar, nehirler ve yüzey akışlarından geldiği belirtilmiştir."
+    },
+    {
+        "q": "Gemi taşımacılığından kaynaklanan kirlilik tipleri ve terimleriyle ilgili aşağıdaki eşleştirmelerden hangisi metindeki tanımlara göre yanlıştır?",
+        "o": [
+            "Sintine Suyu: Gemilerin makine dairelerinde biriken yağ, yakıt ve su karışımı atıklar.",
+            "Balast Suyu: Gemilerin pervanelerini soğutmak için sürekli olarak denizden çekip ısınmış olarak tekrar denize verdiği su.",
+            "Slop Suyu: Petrol veya kimyasal madde taşıyan tankerlerin yük tanklarının yıkanması sonucu oluşan atık su.",
+            "Çöp Atıkları: Gemi personelinin günlük yaşamı sonucu oluşan katı atıklar."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Balast suyu soğutma suyu değil, geminin dengesini (stabilitesini) sağlamak için limanlarda tanklara alınıp boşaltılan sudur."
+    },
+    {
+        "q": "Gemi balast sularının kontrolsüz bir şekilde farklı limanlara boşaltılmasının deniz ekosistemi üzerinde yarattığı en büyük ve geri döndürülemez biyolojik tehlike aşağıdakilerden hangisidir?",
+        "o": [
+            "Deniz suyunun tuzluluk oranını aniden düşürerek dip balıklarının ölümüne neden olması.",
+            "Kendi doğal yaşam alanı dışındaki bir ekosisteme taşınan istilacı (yabancı) türlerin, yerel türleri yok ederek biyoçeşitliliği tahrip etmesi.",
+            "Deniz tabanındaki ağır metalleri çözerek yüzeye çıkarması ve asit yağmurları oluşturması.",
+            "Sintine sularıyla birleşerek çok büyük petrol adaları oluşturması."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Balast sularının en büyük ekolojik tehlikesi, içindeki organizmaların farklı denizlere taşınarak \"istilacı tür\" problemi yaratmasıdır."
+    },
+    {
+        "q": "Denizel ortama ulaşan plastik çöplerin (pet şişeler, poşetler vb.) zamanla \"mikroplastik\" adı verilen 5 mm'den küçük parçacıklara ayrışmasına neden olan temel doğal süreç aşağıdakilerden hangisidir?",
+        "o": [
+            "Nitrifikasyon",
+            "Biyomagnifikasyon",
+            "Fotodegradasyon (Güneş ışığının etkisiyle parçalanma)",
+            "Biyoremediasyon"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Plastiklerin güneş ışığı (UV) etkisiyle fiziksel olarak küçük parçalara ayrılması sürecine fotodegradasyon denir."
+    },
+    {
+        "q": "Deniz kuşları, deniz kaplumbağaları ve balıkların mikroplastikleri veya küçük plastik parçalarını besin zannederek yutması sonucu ortaya çıkan ekolojik ve fizyolojik durum metinde nasıl tanımlanmıştır?",
+        "o": [
+            "Yalancı tokluk hissi yaratarak canlının açlıktan ölmesine veya sindirim sisteminin tıkanmasına yol açması.",
+            "Hayvanların plastikleri sindirerek kendilerine enerji sağlaması.",
+            "Plastiklerin canlının genetiğini değiştirerek daha hızlı üremesine neden olması.",
+            "Canlının vücut sıcaklığını artırarak termal toleransını yükseltmesi."
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Canlıların plastik yutması midede \"yalancı tokluk\" hissi yaratır ve beslenmeyi durdurarak canlının açlıktan ölmesine neden olur."
+    },
+    {
+        "q": "Atıksuların kıyı sularını kirletmemesi için belirli bir derinlik ve uzaklığa borular vasıtasıyla iletilip deşarj edilmesi işlemine \"Derin Deniz Deşarjı\" denir. Bu sistemin deniz ortamındaki temel çalışma prensibi aşağıdakilerden hangisidir?",
+        "o": [
+            "Atıksuyu tamamen buharlaştırarak atmosfere karıştırmak.",
+            "Atıksuyun denizin asimilasyon (doğal arıtım ve seyrelme) kapasitesi içinde difüzörler yardımıyla geniş bir hacme yayılarak etkisinin en aza indirilmesi.",
+            "Atıksuyu deniz tabanına gömerek sonsuza kadar orada kalmasını sağlamak.",
+            "Suyu doğrudan deniz yüzeyine püskürterek güneş ışığıyla arıtmak."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Derin deniz deşarjının amacı, denizin doğal asimilasyon (seyrelme) kapasitesini kullanarak kirlilik etkisini minimize etmektir."
+    },
+    {
+        "q": "Derin deniz deşarjı hatlarının uç kısmında bulunan ve atıksuyun tek bir noktadan değil, basınçlı bir şekilde birden fazla delikten denize çıkışını sağlayarak \"ilk seyrelme\" oranını artıran donanıma ne ad verilir?",
+        "o": [
+            "Difüzör",
+            "Sintine pompası",
+            "Balast tankı",
+            "Surfaktan"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Deşarj borusunun ucunda yer alan ve atıksuyu çok sayıda delikten püskürterek seyrelmeyi artıran yapıya difüzör denir."
+    },
+    {
+        "q": "Aşağıdaki deniz kirliliği parametrelerini ve kavramlarını tanımlarıyla eşleştiriniz. I. Termoklin Tabakası II. T₉₀ Süresi III. İlk Seyrelme a) Atıksu içindeki koliform bakterilerin %90 oranında ölmesi (parçalanması) için geçen süredir. b) Yaz aylarında deniz suyunda oluşan, sıcak üst tabaka ile soğuk alt tabakayı ayıran ve alttan deşarj edilen atıksuyun yüzeye çıkmasını engelleyen yoğunluk bariyeridir. c) Deşarj edilen atıksuyun deniz suyuna karıştığı ilk anda ulaştığı yoğunluk azalması ve dağılma oranıdır.",
+        "o": [
+            "I-b, II-a, III-c",
+            "I-a, II-c, III-b",
+            "I-b, II-c, III-a",
+            "I-c, II-b, III-a"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Termoklin tabakası (b), T₉₀ bakterilerin %90 ölme süresi (a), İlk seyrelme deşarj anındaki karışım oranıdır (c)."
+    },
+    {
+        "q": "Derin deniz deşarjı sistemlerinde \"Termoklin Tabakasının\" bulunması, atıksu yönetimi açısından nasıl bir avantaj sağlar?",
+        "o": [
+            "Atıksuyun içindeki ağır metallerin dibe çökmesini engeller.",
+            "Atıksuyun içindeki bakterilerin sıcaktan çoğalmasını sağlar.",
+            "Dipten deşarj edilen atıksu bulutunun belli bir derinlikte hapsolmasını sağlayarak yüzey sularına ve plajlara ulaşmasını engeller.",
+            "Atıksuyun asit oranını düşürerek denizin pH'ını dengeler."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Termoklin (sıcaklık/yoğunluk bariyeri), atıksuyun yüzeye çıkmasını fiziksel olarak engelleyerek plajları ve yüzey sularını korur."
+    },
+    {
+        "q": "Deniz kirliliği ölçümlerinde, atıksuyun halk sağlığına etkisini belirlemek ve plajların yüzülebilirlik kalitesini ölçmek amacıyla en yaygın kullanılan indikatör (gösterge) kirlilik parametresi aşağıdakilerden hangisidir?",
+        "o": [
+            "Çözünmüş Oksijen (ÇO)",
+            "Toplam Fekal Koliform (Bakteriyolojik gösterge)",
+            "Lignin ve Selüloz miktarı",
+            "Radyoaktif Sezyum-137 seviyesi"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Halk sağlığı ve plaj kalitesi için (atıksuyun patojen etkisi bağlamında) en çok izlenen parametre Fekal Koliform bakterileridir."
+    },
+    {
+        "q": "Karadeniz'in derin su katmanlarının dünyadaki diğer denizlerden en belirgin farkı ve kirliliğe karşı en kırılgan özelliği metinde aşağıdakilerden hangisi olarak belirtilmiştir?",
+        "o": [
+            "Dünyanın en tuzlu denizi olması ve bu nedenle ağır metallerin yüzeyde yüzmesi.",
+            "150-200 metre derinliğin altında oksijenin hiç bulunmaması (anoksik yapı) ve tabanın toksik Hidrojen Sülfür (H₂S) gazı ile kaplı olması.",
+            "Termoklin tabakasının hiç oluşmaması ve suların yıl boyunca sürekli karışması.",
+            "Sadece petrol sızıntılarıyla kirlenmiş bir deniz olması."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Karadeniz'in en belirgin özelliği 150-200m altında oksijen bulunmaması (anoksik) ve H₂S gazı içermesidir."
+    },
+    {
+        "q": "Karadeniz'e dökülen ve taşıdığı devasa tarımsal, evsel ve endüstriyel atık yüküyle Karadeniz'in toplam kirliliğinin çok büyük bir kısmından tek başına sorumlu olan uluslararası nehir aşağıdakilerden hangisidir?",
+        "o": [
+            "Kızılırmak",
+            "Dinyeper",
+            "Tuna Nehri",
+            "Sakarya Nehri"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Tuna Nehri, taşıdığı yük itibarıyla Karadeniz'in en büyük kirletici kaynağıdır."
+    },
+    {
+        "q": "Marmara Denizi'nin hidrodinamik yapısını oluşturan \"iki tabakalı akıntı sistemi\"nin yönleri ve özellikleri aşağıdakilerden hangisinde doğru verilmiştir?",
+        "o": [
+            "Üst akıntı Akdeniz'den Karadeniz'e, alt akıntı ise Karadeniz'den Akdeniz'e doğru akar.",
+            "Hem alt hem de üst akıntı Ege Denizi'ne doğru aynı yönde akar.",
+            "Karadeniz'in az tuzlu suları üstten Ege'ye doğru akarken, Akdeniz'in yoğun ve tuzlu suları alttan Karadeniz'e doğru akar.",
+            "Marmara Denizi'nde akıntı yoktur, tamamen durağan bir göl yapısındadır."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Marmara'da üst akıntı Karadeniz'den (az tuzlu) Ege'ye, alt akıntı ise Akdeniz'den (çok tuzlu) Karadeniz'e doğrudur."
+    },
+    {
+        "q": "Marmara Denizi'nde derin deniz deşarjı projelerinin temel dayanağı, atıksuyun alt akıntıya (Akdeniz suyuna) verilerek Karadeniz'in anoksik çukuruna taşınması prensibidir. Ancak bu uygulamanın Marmara Denizi ekosisteminde yarattığı temel sorun metinde nasıl analiz edilmiştir?",
+        "o": [
+            "Alt akıntıya verilen atıksuların büyük bir kısmının, türbülans ve dikey karışımlar nedeniyle üst tabakaya sızması ve Marmara Denizi içinde kalarak ötrofikasyonu tetiklemesi.",
+            "Alt akıntının atıksuları çok hızlı bir şekilde temizlemesi ve sistemin kusursuz çalışması.",
+            "Atıksuların Akdeniz'e taşınarak oradaki mercan resiflerini yok etmesi.",
+            "Alt akıntıdaki tuz oranının atıksuları tamamen buharlaştırması."
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Derin deşarjla alt akıntıya verilen suların bir kısmı dikey karışımlar ve türbülans ile üst tabakaya sızarak Marmara'nın içinde kalır ve kirliliği (ötrofikasyonu) artırır."
+    },
+    {
+        "q": "Son yıllarda Marmara Denizi'nde sıkça görülen ve ekosistemi felce uğratan \"Müsilaj (Deniz Salyası)\" oluşumunun temel nedeni metne göre aşağıdakilerden hangisidir?",
+        "o": [
+            "Karadeniz'den gelen petrol sızıntılarının deniz suyunu pıhtılaştırması.",
+            "Aşırı besin elementi (azot ve fosfor) yüklenmesi sonucu ötrofikasyonun artması, su sıcaklıklarının yükselmesi ve durağan deniz şartlarının birleşmesiyle fitoplanktonların aşırı salgı üretmesi.",
+            "Gemi balast sularıyla taşınan yabancı (istilacı) balık türlerinin dışkılarının birikmesi.",
+            "Asit yağmurlarının deniz suyundaki kireci çözerek beyaz bir tabaka oluşturması."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Müsilaj; azot/fosfor artışı, sıcaklık yükselişi ve deniz durağanlığının birleşmesiyle alglerin aşırı salgı üretmesidir."
+    },
+    {
+        "q": "Akdeniz ekosistemi için metinde kullanılan ve \"besin elementleri (azot, fosfor) açısından son derece fakir, biyolojik üretkenliği düşük ancak su berraklığı çok yüksek\" anlamına gelen bilimsel terim aşağıdakilerden hangisidir?",
+        "o": [
+            "Ötrofik",
+            "Anoksik",
+            "Oligotrofik",
+            "Mezotrofik"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Besin maddesi açısından fakir, verimsiz ancak berrak sular \"Oligotrofik\" olarak adlandırılır."
+    },
+    {
+        "q": "Aşağıdaki denizlerimizi ve karşı karşıya kaldıkları spesifik kirlilik/ekolojik riskleri eşleştiriniz. I. Karadeniz II. Marmara Denizi III. Ege Denizi a) Girintili çıkıntılı kıyı topoğrafyası ve sığ suları nedeniyle, özellikle körfezlerde (İzmir vb.) kirliliğin hapsolması ve dışarı atılamaması. b) Uluslararası nehirlerin taşıdığı yük ve derin sularındaki doğal H₂S (Hidrojen Sülfür) bariyerinin yüzeye doğru yükselme riski. c) İki tabakalı akıntı sisteminin bozulması, yoğun evsel deşarj ve müsilaj krizi.",
+        "o": [
+            "I-c, II-b, III-a",
+            "I-b, II-c, III-a",
+            "I-a, II-c, III-b",
+            "I-b, II-a, III-c"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Karadeniz H₂S riski (b), Marmara iki tabakalı akıntı ve müsilaj (c), Ege körfezlerde kirlilik hapsolması (a)."
+    },
+    {
+        "q": "Türkiye kıyılarının kirlenmeye karşı korunması amacıyla imzalanan uluslararası sözleşmelerle ilgili aşağıdaki bilgilerden hangisi doğrudur?",
+        "o": [
+            "Karadeniz'in Kirlenmeye Karşı Korunması Sözleşmesi \"Barselona Sözleşmesi\" olarak bilinir.",
+            "Akdeniz'in Kirlenmeye Karşı Korunması Sözleşmesi \"Bükreş Sözleşmesi\" olarak bilinir.",
+            "Gemilerden Kaynaklanan Kirliliğin Önlenmesi Uluslararası Sözleşmesi'nin kısa adı MARPOL'dur.",
+            "Tüm denizlerin tek bir sözleşmeyle korunduğu metnin adı \"Montrö Sözleşmesi\"dir."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Gemilerden kirliliği önleme sözleşmesi MARPOL'dur. (Akdeniz için Barselona, Karadeniz için Bükreş sözleşmeleri geçerlidir)."
+    },
+    {
+        "q": "Akdeniz sahillerimizde (özellikle İskenderun ve Mersin körfezleri), turizm ve evsel atıklar dışında en önemli potansiyel kirlilik kaynağı aşağıdakilerden hangisidir?",
+        "o": [
+            "Yoğun deniz taşımacılığı, petrol boru hatları terminalleri ve ağır sanayi tesisleri.",
+            "Su ürünleri yetiştiriciliğinden kaynaklanan yenmeyen yemler.",
+            "Nükleer santral patlamalarından kalan radyoaktif serpintiler.",
+            "Deri ve kağıt sanayisinin yoğun olarak bu bölgede bulunması."
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - İskenderun ve Mersin bölgeleri, boru hatları terminalleri, deniz taşımacılığı ve ağır sanayi tesisleri (petrokimya vb.) nedeniyle risk altındadır."
+    },
+    {
+        "q": "Türkiye'deki Yüzeysel Su Kalitesi mevzuatına göre, denizlerde halkın yüzme (rekreasyon) amaçlı kullanım alanlarında (plajlarda) sınır değeri kesinlikle aşılmaması gereken ve insan sağlığını doğrudan tehdit eden parametre aşağıdakilerden hangisidir?",
+        "o": [
+            "Çözünmüş Oksijen",
+            "Fekal Koliform / E. coli",
+            "Lignin",
+            "Radyoaktif İyot"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Plajlarda ve yüzme sularında insan sağlığı için en kritik yasal sınır parametresi Fekal Koliform / E. coli bakterileridir."
+    },
+    {
+        "q": "Su arıtımında kullanılan klorlama yönteminin zayıf yönleri (dezavantajları) arasında aşağıdakilerden hangisi metinde yer almaz?",
+        "o": [
+            "Dezenfeksiyon yan ürünleri oluşturması.",
+            "Suyun toplam çözünmüş katı seviyesini artırması.",
+            "Cryptosporidium gibi bazı dirençli canlılara karşı etkisiz olması.",
+            "Suda hiçbir kalıcılık (bakiye) etkisi bırakmadan anında yok olması."
+        ],
+        "c": 3,
+        "e": "Doğru cevap D - Klorlamanın dezavantajları arasında yan ürün oluşturması, çözünmüş katı seviyesini artırması ve Cryptosporidium'a etkisiz olması sayılmıştır. Suda bakiye (kalıcılık) etkisi bırakmaması klorlamanın değil, Ozonlama ve UV yöntemlerinin dezavantajıdır."
+    },
+    {
+        "q": "Ozonlama dezenfeksiyon yöntemi, klorlama ile kıyaslandığında aşağıdaki üstünlüklerden hangisine sahiptir?",
+        "o": [
+            "Klora göre çok daha kısa temas süresi gerektirmesi ve suya oksijen kazandırması.",
+            "Hiçbir ilk yatırım ve işletme maliyeti gerektirmemesi.",
+            "Suyun içinde haftalarca kalarak bakiye etkisi (kalıcılık) sağlaması.",
+            "Tesis içinde çok daha fazla alan kaplayarak yüksek debilerde çalışmaya olanak vermesi."
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Metinde ozonlamanın üstünlükleri arasında klora göre çok daha kısa temas süresi gerektirmesi ve suya oksijen kazandırması açıkça belirtilmiştir."
+    },
+    {
+        "q": "Hiçbir kimyasal maddenin kullanılmadığı, güvenilir olan, yan ürün oluşturmayan ve suyun kimyasal yapısını bozmayan ileri arıtma/dezenfeksiyon teknolojisi aşağıdakilerden hangisidir?",
+        "o": [
+            "Biyoremediasyon",
+            "Klorlama",
+            "UV (Ultraviyole) Işınlama",
+            "Ozonlama"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Metindeki UV (Ultraviyole) Işınlama başlığı altında kimyasal madde kullanılmadığı, yan ürün oluşturmadığı ve kimyasal yapıyı bozmadığı belirtilmektedir."
+    },
+    {
+        "q": "Metne göre, Ozonlama ve UV (Ultraviyole) Işınlama yöntemlerinin en belirgin ortak zayıf yönü (dezavantajı) aşağıdakilerden hangisidir?",
+        "o": [
+            "Her ikisinin de suyu korozif ve yüksek derecede toksik hale getirmesi.",
+            "Her ikisinin de lamba yüzeylerinin kirlenmesi sonucu verim düşüklüğü yaşaması.",
+            "Her ikisinde de dezenfeksiyon yan ürünlerinin oluşması.",
+            "Her ikisinin de suda bakiye etkisinin (kalıcılığının) bulunmaması."
+        ],
+        "c": 3,
+        "e": "Doğru cevap D - Hem Ozonlamanın hem de UV Işınlamanın zayıf yönleri kısmında \"bakiye etkisi (kalıcılığı) yoktur\" maddesi ortak olarak yer almaktadır."
+    },
+    {
+        "q": "Türk çevre mevzuatında, kentsel atık suların yönetiminin dayandırıldığı temel uluslararası referans aşağıdakilerden hangisidir?",
+        "o": [
+            "Barselona Sözleşmesi",
+            "91/271/EEC sayılı Avrupa Birliği Direktifi",
+            "Stockholm Konvansiyonu",
+            "Bükreş Denizleri Koruma Direktifi"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Bölümün sonundaki Yasal Mevzuat kısmında, kentsel atık suların yönetiminin \"91/271/EEC sayılı Avrupa Birliği Direktifi\"ne dayalı olduğu ifade edilmiştir."
+    },
+    {
+        "q": "Yönetmelikte yer alan \"Alıcı ortam\" tanımı aşağıdakilerden hangisini tam olarak ifade etmektedir?",
+        "o": [
+            "Evsel ve endüstriyel atıksuları toplayan ve arıtma tesislerine ileten kanalizasyon sisteminin tamamını.",
+            "Atıksuların toplanıp şehir atıksu sistemine boşaltımının yapıldığı ilk kontrol noktasını.",
+            "Atıksuların deşarj edildiği veya dolaylı olarak karıştığı göl, akarsu, kıyı ve deniz suları ile yeraltı suları gibi yakın veya uzak çevreyi.",
+            "Deniz, tabii ve suni göllerde suyun karayla temas ettiği noktaların birleşmesinden oluşan kıyı çizgisini."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Madde 3 tanımlarında Alıcı ortam, atıksuların deşarj edildiği veya karıştığı göl, akarsu, kıyı, deniz ve yeraltı suları olarak tanımlanmıştır."
+    },
+    {
+        "q": "Endüstriyel atıksu kaynaklarının \"önemli kirletici atıksu kaynakları\" sayılabilmesi için metinde belirtilen günlük debi eşiği aşağıdakilerden hangisidir?",
+        "o": [
+            "Günlük debisi 10 m³'ten fazla olanlar",
+            "Günlük debisi 50 m³'ten fazla olanlar",
+            "Günlük debisi 100 m³'ten fazla olanlar",
+            "Günlük debisi 250 m³'ten fazla olanlar"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Yönetmelikte endüstriyel atıksularda günlük debisi 50 m³'ten daha fazla olan kaynakların \"önemli kirletici atıksu kaynakları\" sayıldığı ifade edilmektedir."
+    },
+    {
+        "q": "Derin deniz deşarjlarında atıksu bulutunun seyreltilebilmesi amacıyla atıksu borusunun ucuna eklenen ve birinci seyrelme (S1) değerinin öngörülen 40-100 veya daha büyük değerler almasını sağlayan özel donanıma ne ad verilir?",
+        "o": [
+            "Parsel bacası",
+            "Kuşaklama kanalı",
+            "Slaç",
+            "Difüzör"
+        ],
+        "c": 3,
+        "e": "Doğru cevap D - Atıksu bulutunun seyreltilebilmesi için borunun ucuna eklenen ve birinci seyrelme (S1) değerinin 40-100 olmasını sağlayan donanıma \"Difüzör\" denir."
+    },
+    {
+        "q": "Çevre İzin ve Lisans Yönetmeliği uyarınca, Ek-1 listesinde belirtilen işletmeler için alıcı ortama yapılacak deşarj konulu çevre izinlerinde yetkili kılındığı belirtilen kurum aşağıdakilerden hangisidir?",
+        "o": [
+            "Devlet Su İşleri Genel Müdürlüğü",
+            "Sağlık Bakanlığı",
+            "Çevre, Şehircilik ve İklim Değişikliği Bakanlığı",
+            "Çevre, Şehircilik ve İklim Değişikliği İl Müdürlüğü"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Madde 3 \"İdare\" tanımında, Ek-1 listesinde belirtilen işletmelerin çevre izinleri için \"Bakanlığın\" (Çevre, Şehircilik ve İklim Değişikliği Bakanlığı) yetkili olduğu yazılıdır."
+    },
+    {
+        "q": "Yönetmelikte \"T90-değeri\"nin tanımı yapılırken, fekal kaynaklı indikatör mikroorganizmaların ilk konsantrasyonlarının yüzde kaçına düşünceye kadar geçecek süre ifade edilmektedir?",
+        "o": [
+            "%1",
+            "%10",
+            "%50",
+            "%90"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - T90 değeri, indikatör mikroorganizmaların ilk konsantrasyonlarının %10'una düşünceye kadar geçecek süre olarak tanımlanmıştır."
+    },
+    {
+        "q": "Atıksu arıtma tesisine giren ham atıksuyun debisi ile BOİ5 konsantrasyonu çarpımının 60'a bölünmesiyle (BOİ5 miktarı 60 gr/kişi/gün baz alınarak) elde edilen organik yük değerine ne ad verilir?",
+        "o": [
+            "Eşdeğer nüfus (E.N.)",
+            "Üretkenlik (Prodüktivite)",
+            "Zehirlilik seyrelme faktörü (ZSF)",
+            "Su kalitesi karakteristik değeri"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Atıksu arıtma tesisine giren ham atıksuyun debisi ile BOİ5'in çarpılıp 60'a bölünmesiyle \"Eşdeğer nüfus (E.N.)\" değeri elde edilir."
+    },
+    {
+        "q": "Aşağıdaki atıksu tanımlarından hangisi metindeki \"Siyah su (tuvalet suyu) haricindeki evlerden kaynaklanan atık suları\" ifade eder?",
+        "o": [
+            "Sintine suyu",
+            "Gri su",
+            "Slop",
+            "Kentsel atıksu"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Siyah su (tuvalet suyu) haricindeki evlerden kaynaklanan atık sulara \"Gri su\" denildiği metinde açıkça belirtilmiştir."
+    },
+    {
+        "q": "\"Suların Korunması ile İlgili Esaslar (Madde 4)\" kapsamında evsel kaynaklı atıksular için atıksu üretim denklemi açısından belirtilen temel kural aşağıdakilerden hangisidir?",
+        "o": [
+            "Evsel atıksuların endüstriyel atıksularla aynı kanalda toplanmasının yasaklanması.",
+            "Evsel atıksuların tamamının derin deniz deşarjı ile bertaraf edilmesi.",
+            "Gri suyun hiçbir arıtmaya tabi tutulmadan yeraltı sularına deşarj edilmesi.",
+            "Konuta giren temiz su miktarının atıksuya eşit kabul edilmesi."
+        ],
+        "c": 3,
+        "e": "Doğru cevap D - Madde 4 \"Suların korunması\" esaslarında \"Evsel kaynaklı atıksular için, konuta giren temiz su miktarının atıksuya eşit olması\" kuralı yer almaktadır."
+    },
+    {
+        "q": "Kıta içi su kaynaklarının korunması, kirlenmesinin önlenmesi ve kirlenmiş suların iyileştirilmesi amacıyla oluşturulacak \"Havza koruma planı\"nı kim/hangi kurum yapar veya yaptırır?",
+        "o": [
+            "Mahallin en büyük mülki amiri tarafından yapılır.",
+            "Büyükşehir belediyeleri su ve kanalizasyon idarelerince koordine edilir.",
+            "Devlet Su İşleri Genel Müdürlüğü ve ilgili kuruluşların görüşleri alınarak Bakanlıkça yapılır/yaptırılır.",
+            "Kültür ve Turizm Bakanlığının denetiminde özel sektör aracılığıyla yapılır."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Madde 5'te, Havza koruma planının Devlet Su İşleri Genel Müdürlüğü ve ilgili kuruluşların görüşleri alınarak Bakanlıkça yapılacağı/yaptırılacağı belirtilmektedir."
+    },
+    {
+        "q": "\"Göllerle İlgili Kirletme Yasakları (Madde 21)\" uyarınca, göllere atıksu deşarjı ile ilgili olarak metinde açıkça belirtilen hüküm aşağıdakilerden hangisidir?",
+        "o": [
+            "İçme suyu temini dışındaki göllere arıtılmamış atıksular verilebilir.",
+            "Göllere derin deniz deşarjı kriterleri uygulanamaz.",
+            "Göllerde ötrofikasyonu önlemek için sadece difüzör kullanılması zorunludur.",
+            "Bütün göllere atıksu boşaltımında sadece T90 değeri esas alınır."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Madde 21'de, göllere atıksu deşarjı ile ilgili olarak \"derin deniz deşarjı kriterleri uygulanamaz\" ifadesi kesin bir yasak kuralı olarak geçmektedir."
+    },
+    {
+        "q": "İşletmelerin atıksu arıtma tesislerinden çıkan suların \"deşarj standartlarını\" sağlayabilmesi amacıyla, atıksuların yağmur suları, soğutma suları veya proses dışı temiz sularla karıştırılması işlemine ilişkin Yönetmelik hükmü aşağıdakilerden hangisidir?",
+        "o": [
+            "İşletme maliyetlerini düşürdüğü için teşvik edilir.",
+            "Sadece yaz aylarında sıcaklık kontrolü amacıyla serbesttir.",
+            "Sadece Çevre İzin Belgesi olan tesislerde serbesttir.",
+            "Kesinlikle yasaktır (Seyreltme yasağı)."
+        ],
+        "c": 3,
+        "e": "Doğru cevap D - Yönetmeliğin Beşinci Bölümünde, atıksuların deşarj standartlarını sağlamak amacıyla temiz sularla seyreltilmesi açıkça yasaklanmıştır (Seyreltme Yasağı)."
+    },
+    {
+        "q": "Endüstriyel tesislerin atıksularını merkezi kanalizasyon şebekesine bağlayabilmeleri için, kanalizasyon borularına (korozyon vb.) veya atıksu arıtma tesisinin biyolojik işleyişine zarar vermemesi amacıyla kendi bünyelerinde kurmak ve işletmek zorunda oldukları tesise ne ad verilir?",
+        "o": [
+            "Ön arıtma tesisi",
+            "İleri dezenfeksiyon tesisi",
+            "Derin deniz deşarj ünitesi",
+            "Kuşaklama kanalı"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Kanalizasyona deşarj öncesinde, şebekeyi ve ana arıtmayı korumak için sanayi tesislerinin kurması gereken sisteme \"ön arıtma tesisi\" denir."
+    },
+    {
+        "q": "Kanalizasyon şebekesi bulunmayan yerleşim yerlerinde veya münferit sanayi tesislerinde atıksuların bertarafı için yönetmeliğin emrettiği zorunlu uygulama aşağıdakilerden hangisidir?",
+        "o": [
+            "Atıksuların doğrudan en yakın dere veya kuru dere yatağına deşarj edilmesi.",
+            "Atıksuların yeraltı suyuna sızdırılarak toprağın doğal arıtımından faydalanılması.",
+            "Atıksuların \"sızdırmaz foseptik\"lerde toplanması ve vidanjör vasıtasıyla atıksu altyapı tesislerine taşınması.",
+            "Atıksuların hiçbir işleme tabi tutulmadan tarımsal sulamada kullanılması."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Kanalizasyonu olmayan yerlerde sızdırmaz foseptik yapılması ve vidanjörle çekilmesi yönetmelik hükmüdür."
+    },
+    {
+        "q": "Derin deniz deşarjı tasarımında, atıksuyun difüzörden çıkışıyla sağlanan \"ilk seyrelme (S1)\" ile atıksu bulutunun deniz içinde akıntılarla yayılarak sağladığı \"ikinci seyrelme (S2)\" değerlerinin çarpımıyla (S = S1 x S2) elde edilen kavrama ne isim verilir?",
+        "o": [
+            "Toplam asimilasyon yüzdesi",
+            "Toplam seyrelme",
+            "Maksimum T90 değeri",
+            "Biyolojik arıtılabilirlik faktörü"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - S1 (ilk seyrelme) ve S2 (ikinci seyrelme) değerlerinin çarpımı Derin Deniz Deşarjında \"Toplam Seyrelme\" olarak ifade edilir."
+    },
+    {
+        "q": "Denetim mekanizmalarının sağlıklı işlemesi için, atıksu arıtma tesislerinden veya doğrudan alıcı ortama yapılan deşarjlarda \"numune alma noktasının\" yeri metinde/yönetmelikte nasıl belirlenmiştir?",
+        "o": [
+            "Atıksuyun alıcı ortama (deniz, göl, akarsu) karıştığı ve seyrelmenin başladığı noktanın 100 metre ilerisinde.",
+            "Atıksuyun deşarj edildiği noktadan hemen önce, alıcı ortama hiçbir şekilde karışmadan evvel kolayca erişilebilen, özel olarak tasarlanmış bir kontrol bacasında veya kanalında.",
+            "Arıtma tesisinin havalandırma havuzunun tam ortasında.",
+            "İşletmenin üretim bandından atıksuyun ilk çıktığı kapalı boru içinde."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Numune alma noktası, atıksuyun alıcı ortama karışmadan önceki en son noktasında bulunan, rahatça ulaşılabilen bir kontrol bacası olmak zorundadır."
+    },
+    {
+        "q": "Alıcı ortamlara doğrudan yapılan atıksu deşarjlarında (soğutma suları dahil), sucul ekosistemin termal şoka girmesini ve termal kirliliği önlemek amacıyla yönetmelikte belirlenen temel \"maksimum sıcaklık\" sınır değeri genel olarak kaç santigrat derece (°C) olarak belirlenmiştir?",
+        "o": [
+            "15 °C",
+            "25 °C",
+            "35 °C",
+            "45 °C"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Alıcı ortamlara doğrudan yapılacak atıksu ve soğutma suyu deşarjlarında termal kirliliği önlemek için yönetmelikteki genel sıcaklık sınırı 35 °C'dir."
+    },
+    {
+        "q": "Arıtılmış atıksuların tarımsal sulamada kullanılabilmesi (\"Atıksuların Arazide Kullanımı\") çevre açısından desteklenen bir geri kazanım yöntemidir. Ancak yönetmelik bu durumu hangi temel şartın sağlanmasına bağlamıştır?",
+        "o": [
+            "Suda hiçbir şekilde çözünmüş oksijen bulunmaması şartına.",
+            "Sadece sentetik deterjan fabrikalarından çıkan suların kullanılmasına.",
+            "Toprakta ağır metal birikimine yol açmaması, yeraltı sularını kirletmemesi ve hijyen (patojen) kriterlerini sağlaması şartına.",
+            "Atıksuyun sadece gece saatlerinde araziye verilmesine."
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Atıksuyun tarımsal kullanımı, toprakta ağır metal birikimine yol açmaması, yeraltı suyunu kirletmemesi ve patojen taşımaması koşuluna bağlanmıştır."
+    },
+    {
+        "q": "İşletmelerin arıtma tesislerinde meydana gelebilecek arıza, bakım veya elektrik kesintisi gibi durumlarda, atıksuyun arıtılmadan \"bypass\" edilerek (doğrudan pas geçilerek) alıcı ortama verilmesi ile ilgili Yönetmelik kuralı aşağıdakilerden hangisinde doğru ifade edilmiştir?",
+        "o": [
+            "Arıza durumlarında idareye haber vermeden 48 saat boyunca bypass yapılabilir.",
+            "Bypass (arıtmadan doğrudan deşarj) kesinlikle yasaktır; tesislerin arıza ve acil durumlara karşı gerekli yedekleme, depolama veya alternatif tedbirleri almış olması zorunludur.",
+            "Sadece gece mesaisinde bakım yapılırken bypass yapılmasına izin verilir.",
+            "Bypass suyu, sadece derin deniz deşarjı varsa denize verilebilir."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Yönetmelik gereği atıksuların arıtılmadan bypass edilerek alıcı ortama verilmesi kesinlikle yasaktır; tesislerin arızalara karşı gerekli önlemleri ve yedeklemeleri almış olması gerekir."
+    },
+    {
+        "q": "Aşağıdaki atıksu yönetim uygulamalarını, yönetmelikteki ilgili koşul/kural ile eşleştiriniz. I. Sızdırmaz Foseptik Kullanımı II. Ön Arıtma Kurulması III. Derin Deniz Deşarjı Uygulanması a) Kanalizasyon sisteminin ve ana arıtma tesisinin kirlilik yükünden korunması için zorunludur. b) Denizlerin asimilasyon kapasitesinin yüksek olduğu ve termoklin tabakasının bulunduğu kıyılarda tercih edilir. c) Kanalizasyon şebekesi bulunmayan bölgelerde yeraltı suyunu korumak için zorunludur.",
+        "o": [
+            "I-c, II-a, III-b",
+            "I-b, II-c, III-a",
+            "I-a, II-b, III-c",
+            "I-c, II-b, III-a"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Sızdırmaz foseptik kanalizasyon olmayan yerlerde (c); Ön arıtma kanalizasyonu korumak için (a); Derin deniz deşarjı denizin asimilasyon gücünü kullanmak için (b) uygulanır."
+    },
+    {
+        "q": "Evsel veya endüstriyel atıksuların deşarjında, yönetmelikte belirtilen standartların aşıldığının tespit edilmesi durumunda aşağıdakilerden hangisi idarenin (Çevre, Şehircilik ve İklim Değişikliği Bakanlığı / İl Müdürlüğü) uygulayacağı yaptırım sürecini doğru açıklar?",
+        "o": [
+            "İşletmeye süresiz olarak faaliyet izni verilir ve sadece uyarı yazısı yazılır.",
+            "Çevre Kanunu kapsamında idari para cezası uygulanır, ihlalin devamı veya düzeltilmemesi halinde tesisin faaliyetleri kısmen veya tamamen durdurulabilir.",
+            "Tesisin arıtma sorumluluğu tamamen yerel belediyeye devredilir ve işletme ceza almaz.",
+            "İşletmenin su faturaları iki katına çıkarılır ancak üretime dokunulmaz."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Standartların ihlali durumunda idari yaptırım (para cezası) uygulanır; ihlalin giderilmemesi halinde tesisin faaliyeti kısmen veya tamamen durdurulabilir."
+    },
+    {
+        "q": "İşletmelerin atıksularını alıcı ortama (deniz, akarsu, göl vb.) doğrudan deşarj edebilmeleri için Çevre Kanunu ve ilgili yönetmelikler kapsamında almaları zorunlu olan temel belge aşağıdakilerden hangisidir?",
+        "o": [
+            "ÇED Olumsuz Kararı",
+            "Çevre İzni",
+            "Yapı Kullanım İzin Belgesi",
+            "Turizm İşletme Belgesi"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Alıcı ortama deşarj eden tesisler Çevre Kanunu ve ilgili yönetmelikler gereği Çevre İzni almak zorundadır."
+    },
+    {
+        "q": "Endüstriyel atıksu üreten tesislerin, atıksularını kentsel kanalizasyon şebekesine (atıksu altyapı tesisine) verebilmeleri için ilgili altyapı yönetiminden (Büyükşehirlerde Su ve Kanalizasyon İdaresi, diğer yerlerde Belediye) almak zorunda oldukları belge aşağıdakilerden hangisidir?",
+        "o": [
+            "Emisyon İzni",
+            "Bağlantı Kalite Kontrol Ruhsatı",
+            "Derin Deniz Deşarjı Onay Belgesi",
+            "Gayrisıhhî Müessese Ruhsatı"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Kanalizasyon şebekesine deşarj eden endüstriyel tesisler, altyapı yönetiminden \"Bağlantı Kalite Kontrol Ruhsatı\" almak zorundadır."
+    },
+    {
+        "q": "Yönetmeliğe göre, bir işletmenin almış olduğu \"Çevre İzni\"nin veya deşarj koşullarının geçerliliğini yitirmesine ve yenilenmesini gerektiren durum aşağıdakilerden hangisidir?",
+        "o": [
+            "Tesisin sadece unvanının (isminin) aynı vergi numarası ile değiştirilmesi.",
+            "Tesiste üretim kapasitesinin üçte bir oranında artırılması veya üretim prosesinin değiştirilerek atıksu miktarının ve kirlilik karakterinin değişmesi.",
+            "Tesisin bulunduğu bölgede yeni bir konut projesinin yapılması.",
+            "Tesisin genel müdürünün değişmesi."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Tesisin üretim kapasitesinin artması veya prosesinin değişmesi durumunda atıksu kirlilik yükü değişeceğinden Çevre İzninin yenilenmesi zorunludur."
+    },
+    {
+        "q": "Atıksu altyapı sistemlerinin (kanalizasyon şebekesi) ve ana arıtma tesisinin korunması amacıyla, şebekeye verilmesi kesinlikle yasak olan maddeler arasında aşağıdakilerden hangisi sayılmaz?",
+        "o": [
+            "Tesislerde oluşan arıtma tesisi çamurları (slaç)",
+            "Kanalizasyon borularını tıkayacak nitelikteki katı atıklar ve viskoz maddeler",
+            "Evsel kaynaklı siyah su (tuvalet suyu) ve gri su",
+            "Patlayıcı, parlayıcı, korozif ve radyoaktif nitelikteki maddeler"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Evsel kaynaklı siyah su ve gri su zaten kanalizasyonun temel taşınma unsurlarıdır. Patlayıcılar, arıtma çamurları ve katı atıkların şebekeye verilmesi ise yasaktır."
+    },
+    {
+        "q": "Organize Sanayi Bölgeleri (OSB) içindeki endüstriyel tesislerin atıksu yönetimi sorumluluğu ile ilgili yönetmelik kuralı aşağıdakilerden hangisinde doğru ifade edilmiştir?",
+        "o": [
+            "OSB içindeki her tesis kendi arıtmasını kurmak ve atıksuyunu doğrudan nehre vermek zorundadır; OSB yönetiminin bir sorumluluğu yoktur.",
+            "OSB yönetimi merkezi atıksu arıtma tesisini kurmak ve işletmekle yükümlüdür; OSB içindeki katılımcı tesisler ise merkezi arıtmanın giriş standartlarını sağlamak için gerekirse ön arıtma yaparlar.",
+            "OSB içindeki tesisler atıksularını hiçbir işlem yapmadan doğrudan yeraltı sularına deşarj etme hakkına sahiptir.",
+            "Atıksu yönetimi tamamen Çevre Bakanlığının sorumluluğundadır, tesisler sadece ceza öder."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - OSB yönetimi merkezi arıtmayı kurmakla, OSB içindeki firmalar ise merkezi arıtmanın kabul standartlarını sağlamakla yükümlüdür."
+    },
+    {
+        "q": "Atıksu altyapı tesisinin (kanalizasyon şebekesinin) henüz bulunmadığı alanlarda kurulu olan tesislerin atıksularını yönetme biçimi ile ilgili zorunluluk aşağıdakilerden hangisidir?",
+        "o": [
+            "Atıksuların yağmur suyu hatlarına gizlice bağlanması.",
+            "Sızdırmaz foseptik yapıp atıksuları burada biriktirmek ve dolduğunda vidanjörle merkezi atıksu altyapı tesisine taşıtarak bu işlemi belgelemek.",
+            "Atıksuları kendi arazisi içinde buharlaştırmak.",
+            "Foseptik kuyusunun altını delerek toprağa sızmasını sağlamak."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Altyapı tesisi olmayan yerlerde sızdırmaz foseptik yapılması ve atıksuyun vidanjörle taşınması yasal zorunluluktur."
+    },
+    {
+        "q": "Aşağıdaki idari yetki ve belgeleri yönetmelikteki işlevleriyle eşleştiriniz. I. Çevre İzni II. Bağlantı Kalite Kontrol Ruhsatı III. Atıksu Taşıma (Vidanjör) Belgesi a) Kanalizasyon şebekesine deşarj yapan tesisler için atıksu altyapı yönetimince verilir. b) Alıcı ortama (doğaya) doğrudan deşarj yapan tesisler için alınması zorunludur. c) Kanalizasyon olmayan yerlerde sızdırmaz foseptikten çekilen atıksuyun yasal bertarafı için kayıt altına alınmasını sağlar.",
+        "o": [
+            "I-b, II-a, III-c",
+            "I-a, II-b, III-c",
+            "I-b, II-c, III-a",
+            "I-c, II-a, III-b"
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Çevre İzni alıcı ortam (b), BKKR kanalizasyon (a), Vidanjör belgesi ise foseptik taşıması (c) içindir."
+    },
+    {
+        "q": "Yeni kurulacak veya revize edilecek atıksu arıtma tesislerinin projelerinin inşaatına başlanmadan önce, projelerin teknik uygunluğunun denetlenmesi için \"Proje Onay\" dosyasının hangi makam tarafından onaylanması zorunludur?",
+        "o": [
+            "İl Sağlık Müdürlüğü",
+            "Ticaret Bakanlığı",
+            "Çevre, Şehircilik ve İklim Değişikliği Bakanlığı (veya Bakanlığın yetki devri yaptığı idareler)",
+            "Türkiye İstatistik Kurumu"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Arıtma tesisi projeleri, inşaata başlanmadan önce Çevre, Şehircilik ve İklim Değişikliği Bakanlığından (veya yetkili mercilerden) proje onayı almak zorundadır."
+    },
+    {
+        "q": "Yönetmeliğin Atıksu Altyapı Tesisleri bölümünde, yeni inşa edilecek yerleşim yerlerinin (şehir, kasaba vb.) altyapı sistemleri (kanalizasyon planlaması) için benimsediği ve emrettiği mühendislik kuralı aşağıdakilerden hangisidir?",
+        "o": [
+            "Atıksu ve yağmur sularının aynı boruda taşındığı \"Bileşik Sistem\" yapılması.",
+            "Yağmur sularının ve evsel atıksuların ayrı borularla toplandığı \"Ayrık Sistem\" olarak planlanıp inşa edilmesi.",
+            "Tüm atıksuların açık kanaletlerle taşınması.",
+            "Sadece evsel atıksu hattı yapılması, yağmur suyu hatlarının yasaklanması."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Yönetmelik, yeni yerleşim yerlerinde yağmur suyu ve atıksu hatlarının ayrı ayrı inşa edildiği \"Ayrık Sistem\" kurulmasını emreder."
+    },
+    {
+        "q": "Bağlantı Kalite Kontrol Ruhsatı (BKKR) verilmeden önce, atıksu altyapı tesisi yönetimi (Örn: İSKİ, ASKİ vb.) tarafından işletmelerde yapılan denetimlerde en çok dikkat edilen teknik parametre grubu hangisidir?",
+        "o": [
+            "İşletmenin yıllık kar oranı",
+            "Çalışan personelin yaş ortalaması",
+            "Atıksuyun kanalizasyon sistemine ve ana arıtmaya zarar verip vermeyeceğini gösteren kirlilik yükü ve toksik parametreler",
+            "İşletmenin ürettiği ürünün piyasa değeri"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - BKKR verilirken en çok dikkat edilen husus, işletme atıksuyunun (özellikle toksik yükünün) kanalizasyon sistemine ve arıtma prosesine zarar verip vermeyeceğidir."
+    },
+    {
+        "q": "Yönetmeliğe göre, tesisleri işleten gerçek ve tüzel kişiler işletme aşamasından itibaren, kirliliğin izlenmesi amacıyla yaptıkları ölçüm ve izleme sonuçlarını hangi resmi kuruma rapor etmekle yükümlüdürler?",
+        "o": [
+            "Devlet Su İşleri Genel Müdürlüğüne",
+            "Sağlık Bakanlığına",
+            "Çevre, Şehircilik ve İklim Değişikliği İl Müdürlüğüne",
+            "İlgili Büyükşehir Belediyesi Su ve Kanalizasyon İdaresine"
+        ],
+        "c": 2,
+        "e": "Doğru cevap C - Metinde, işletmelerin izleme sonuçlarını \"Çevre, Şehircilik ve İklim Değişikliği İl Müdürlüğüne\" rapor etmekle yükümlü olduğu açıkça ifade edilmektedir."
+    },
+    {
+        "q": "Su Kirliliği Kontrolü Yönetmeliğindeki yasaklara aykırı hareket eden ve yükümlülüklerini yerine getirmeyen işletmelere idare tarafından uygulanacak olan yaptırımın ilk aşaması metinde nasıl tanımlanmıştır?",
+        "o": [
+            "İşletmenin derhal kapatılması ve mühürlenmesi.",
+            "İşletmeye eksikliklerini gidermesi için ek süre verilmesi.",
+            "İşletme sahibinin doğrudan hapis cezası ile yargılanması.",
+            "Atıksu deşarj hattının beton dökülerek kapatılması."
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - İhlal durumunda işletmeye doğrudan kapatma veya ceza değil, öncelikle \"ek süre verilmesi\" uygulandığı Madde 55'te belirtilmiştir."
+    },
+    {
+        "q": "Yükümlülüklerini kendisine verilen ek süre sonunda da yerine getirmeyen tesislerin faaliyetlerinin \"kısmen veya tamamen durdurulması\" cezası, hangi kanunun kaçıncı maddesine dayanılarak uygulanmaktadır?",
+        "o": [
+            "2872 sayılı Çevre Kanununun 15 inci maddesine göre.",
+            "2872 sayılı Çevre Kanununun 24 üncü maddesine göre.",
+            "Umumi Hıfzıssıhha Kanununun 268 inci maddesine göre.",
+            "Türk Ceza Kanununun ilgili maddelerine göre."
+        ],
+        "c": 0,
+        "e": "Doğru cevap A - Verilen ek sürede yükümlülük yerine getirilmezse, faaliyetlerin kısmen veya tamamen durdurulması işleminin \"Çevre Kanununun 15 inci maddesinde\" belirtilen makamlarca yapılacağı yazmaktadır."
+    },
+    {
+        "q": "Çevre mevzuatına aykırı atıksu deşarjı yapan veya yükümlülüklerini ihlal eden işletmelere kesilecek olan \"idari nitelikteki cezalar (para cezaları)\" Çevre Kanununun hangi maddeleri referans alınarak kesilmektedir?",
+        "o": [
+            "Yalnızca 15 inci madde",
+            "20 nci ve 23 üncü maddeler",
+            "1 inci ve 2 nci maddeler",
+            "97 nci ve 104 üncü maddeler"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - İdari nitelikteki cezaların (para cezaları vb.), Çevre Kanununun 20 nci ve 23 üncü maddelerinde belirtildiği metinde kesin olarak ifade edilmiştir."
+    },
+    {
+        "q": "Metinde (Madde 56), mevcut yönetmeliğin yürürlüğe girmesiyle birlikte yürürlükten kaldırıldığı (mülga olduğu) belirtilen önceki \"Su Kirliliği Kontrolü Yönetmeliği\" hangi tarihte yayımlanmıştır?",
+        "o": [
+            "9/8/1983",
+            "4/9/1988",
+            "17/12/2022",
+            "13/2/2008"
+        ],
+        "c": 1,
+        "e": "Doğru cevap B - Madde 56 (Yürürlükten Kaldırılan Hükümler) uyarınca, yürürlükten kalkan eski yönetmeliğin yayımlanma tarihi 4/9/1988 olarak belirtilmiştir."
+    }
+];
+
+  document.getElementById("mainTitle").textContent = `${BASE_SUBJECT} Deneme Sınavı`;
+  document.getElementById("headerSubject").textContent = BASE_SUBJECT;
+  document.getElementById("sourceTag").textContent = SOURCE_TEXT;
+  document.title = `${BASE_SUBJECT} Deneme Sınavı`;
+
+  if (performance.navigation.type === performance.navigation.TYPE_RELOAD || !sessionStorage.getItem("session_active")) {
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith(storagePrefix())) localStorage.removeItem(k);
+    });
+    sessionStorage.setItem("session_active", "true");
+  }
+
+  let currentQuestions = [];
+  let currentIndex = 0;
+  let solvedIndex = -1;
+  let userAnswers = {};
+  let currentSetKey = "";
+  let stats = { correct: 0, wrong: 0 };
+  let wrongQuestionsMode = false;
+
+  function storagePrefix() {
+    return "exam_" + CURRENT_SUBJECT.replace(/\s+/g, "_") + "_";
+  }
+
+  function setStateKey(index) {
+    return storagePrefix() + "state_set_" + index;
+  }
+
+  function wrongQuestionsKey() {
+    return storagePrefix() + "wrong_questions_pool";
+  }
+
+  function getWrongQuestionsPool() {
+    return JSON.parse(localStorage.getItem(wrongQuestionsKey()) || "[]");
+  }
+
+  function saveWrongQuestionsPool(pool) {
+    localStorage.setItem(wrongQuestionsKey(), JSON.stringify(pool));
+  }
+
+  function addWrongQuestionToPool(question) {
+    const pool = getWrongQuestionsPool();
+
+    const exists = pool.some(item =>
+      item.q === question.q &&
+      JSON.stringify(item.o) === JSON.stringify(question.o)
+    );
+
+    if (!exists) {
+      pool.push({
+        q: question.q,
+        o: [...question.o],
+        c: question.c,
+        e: question.e || ""
+      });
+      saveWrongQuestionsPool(pool);
+    }
+  }
+
+  function normalizeQuestion(q, originalIndex) {
+    return {
+      id: q.id || ("q_" + originalIndex + "_" + Math.random().toString(36).slice(2, 8)),
+      originalNo: originalIndex + 1,
+      q: q.q,
+      o: [...q.o],
+      c: q.c,
+      e: q.e || "",
+      isRetry: q.isRetry || false,
+      retryFrom: q.retryFrom || null,
+      retryCount: q.retryCount || 0,
+      answeredCorrectly: q.answeredCorrectly || false
+    };
+  }
+
+  function initMenu() {
+    const menuGrid = document.getElementById("menuGrid");
+    menuGrid.innerHTML = "";
+
+    const totalSets = Math.ceil(questions.length / QUESTIONS_PER_SET);
+
+    let setsPerButton = 1;
+    let buttonCount = totalSets;
+
+    if (buttonCount > 10) {
+      setsPerButton = 2;
+      buttonCount = Math.ceil(totalSets / setsPerButton);
+    }
+
+    buttonCount = Math.min(buttonCount, 10);
+
+    for (let i = 0; i < buttonCount; i++) {
+      const startSetNo = i * setsPerButton + 1;
+      const endSetNo = Math.min(startSetNo + setsPerButton - 1, totalSets);
+
+      const start = (startSetNo - 1) * QUESTIONS_PER_SET;
+      const end = Math.min(endSetNo * QUESTIONS_PER_SET, questions.length);
+
+      if (start >= questions.length) continue;
+
+      const key = setStateKey(i);
+
+      const saved = JSON.parse(localStorage.getItem(key) || "null");
+      const solved = saved ? Object.keys(saved.userAnswers || {}).length : 0;
+      const correct = saved?.stats?.correct || 0;
+      const wrong = saved?.stats?.wrong || 0;
+
+      const totalCurrent = saved?.currentQuestions?.length || (end - start);
+      const isCompleted = saved ? (solved >= totalCurrent && totalCurrent > 0) : false;
+
+      const label = startSetNo === endSetNo
+        ? `Deneme-${startSetNo}`
+        : `Deneme-${startSetNo}-${endSetNo}`;
+
+      const btn = document.createElement("button");
+      btn.className = `menu-btn ${isCompleted ? "locked" : ""}`;
+      btn.innerHTML = `
+        <strong>${label}</strong><br>
+        <small>${end - start} Soru | Çözülen ${solved} (Doğru ${correct} Yanlış ${wrong})</small>
+      `;
+
+      if (!isCompleted) {
+        btn.onclick = () => startSet(i, key, start, end);
+      }
+
+      menuGrid.appendChild(btn);
+    }
+
+    const wrongPool = getWrongQuestionsPool();
+
+    if (wrongPool.length > 0) {
+      const wrongBtn = document.createElement("button");
+      wrongBtn.className = "wrong-menu-btn";
+      wrongBtn.innerHTML = `
+        <strong>Yanlış Yapılan Sorular</strong><br>
+        <small>${wrongPool.length} Soru | Yeniden çöz</small>
+      `;
+      wrongBtn.onclick = openWrongQuestions;
+      menuGrid.appendChild(wrongBtn);
+    }
+  }
+
+  function openWrongQuestions() {
+    const pool = getWrongQuestionsPool();
+    if (!pool.length) return;
+
+    wrongQuestionsMode = true;
+    currentSetKey = storagePrefix() + "wrong_questions_state";
+
+    const saved = JSON.parse(localStorage.getItem(currentSetKey) || "null");
+
+    if (saved) {
+      currentQuestions = saved.currentQuestions;
+      currentIndex = saved.currentIndex;
+      solvedIndex = saved.solvedIndex;
+      userAnswers = saved.userAnswers || {};
+      stats = saved.stats || { correct: 0, wrong: 0 };
+    } else {
+      currentQuestions = pool.map((q, i) => ({
+        id: "wrong_" + i + "_" + Math.random().toString(36).slice(2, 8),
+        originalNo: i + 1,
+        q: q.q,
+        o: [...q.o],
+        c: q.c,
+        e: q.e || "",
+        isRetry: false,
+        retryFrom: null,
+        retryCount: 0,
+        answeredCorrectly: false
+      }));
+
+      currentIndex = 0;
+      solvedIndex = -1;
+      userAnswers = {};
+      stats = { correct: 0, wrong: 0 };
+      saveState();
+    }
+
+    document.getElementById("menuContainer").style.display = "none";
+    document.getElementById("quizContainer").style.display = "block";
+    document.getElementById("headerSubject").textContent = "Yanlış Yapılan Sorular";
+    loadQuestion();
+    window.scrollTo(0, 0);
+  }
+
+  function startSet(idx, key, start, end) {
+    wrongQuestionsMode = false;
+    currentSetKey = key;
+
+    const saved = JSON.parse(localStorage.getItem(key) || "null");
+
+    if (saved) {
+      currentQuestions = saved.currentQuestions;
+      currentIndex = saved.currentIndex;
+      solvedIndex = saved.solvedIndex;
+      userAnswers = saved.userAnswers || {};
+      stats = saved.stats || { correct: 0, wrong: 0 };
+    } else {
+      currentQuestions = questions.slice(start, end).map((q, i) => normalizeQuestion(q, start + i));
+      currentIndex = 0;
+      solvedIndex = -1;
+      userAnswers = {};
+      stats = { correct: 0, wrong: 0 };
+      saveState();
+    }
+
+    document.getElementById("menuContainer").style.display = "none";
+    document.getElementById("quizContainer").style.display = "block";
+    document.getElementById("headerSubject").textContent = BASE_SUBJECT;
+    loadQuestion();
+    window.scrollTo(0, 0);
+  }
+
+  function getQuestionTitle(q) {
+    return `Soru-${q.originalNo}: ${q.q}`;
+  }
+
+  function loadQuestion() {
+    const q = currentQuestions[currentIndex];
+    const progress = ((currentIndex + 1) / currentQuestions.length) * 100;
+
+    document.getElementById("progressBar").style.width = progress + "%";
+    document.getElementById("footerLeft").textContent = `Kalan: ${Math.max(currentQuestions.length - (currentIndex + 1), 0)}`;
+    document.getElementById("footerRight").textContent = `${currentIndex + 1} / ${currentQuestions.length}`;
+    document.getElementById("questionText").textContent = getQuestionTitle(q);
+
+    const retryBadge = document.getElementById("retryBadge");
+    retryBadge.style.display = q.isRetry ? "block" : "none";
+
+    const optArea = document.getElementById("optionsArea");
+    const expArea = document.getElementById("explanationArea");
+    optArea.innerHTML = "";
+    expArea.style.display = "none";
+    expArea.innerHTML = "";
+
+    const letters = ["A", "B", "C", "D"];
+
+    q.o.forEach((opt, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "option-btn";
+      btn.innerHTML = `<strong>${letters[idx]})</strong> ${opt}`;
+
+      if (currentIndex <= solvedIndex) {
+        btn.disabled = true;
+        const userChoice = userAnswers[currentIndex];
+
+        if (idx === userChoice) {
+          if (userChoice === q.c) {
+            btn.classList.add("correct");
+            btn.innerHTML += ` <span class="tick show">✔</span>`;
+          } else {
+            btn.classList.add("wrong");
+          }
+        }
+
+        if (wrongQuestionsMode) {
+          if (idx === q.c) {
+            btn.classList.add("correct");
+            btn.innerHTML += ` <span class="tick show">✔</span>`;
+          }
+          expArea.innerHTML = `<strong>Açıklama:</strong> ${q.e}`;
+          expArea.style.display = "block";
+        } else {
+          if (userChoice === q.c) {
+            expArea.innerHTML = `<strong>Açıklama:</strong> ${q.e}`;
+            expArea.style.display = "block";
+          } else if (q.isRetry) {
+            if (idx === q.c) {
+              btn.classList.add("correct");
+              btn.innerHTML += ` <span class="tick show">✔</span>`;
+            }
+            expArea.innerHTML = `<strong>Açıklama:</strong> ${q.e}`;
+            expArea.style.display = "block";
+          }
+        }
+      } else {
+        btn.onclick = () => selectOption(idx);
+      }
+
+      optArea.appendChild(btn);
+    });
+
+    document.getElementById("prevBtn").style.visibility = currentIndex > 0 ? "visible" : "hidden";
+    document.getElementById("nextBtn").style.visibility = currentIndex <= solvedIndex ? "visible" : "hidden";
+  }
+
+  function selectOption(idx) {
+    const q = currentQuestions[currentIndex];
+    const isCorrect = idx === q.c;
+
+    userAnswers[currentIndex] = idx;
+    solvedIndex = Math.max(solvedIndex, currentIndex);
+
+    if (isCorrect) {
+      stats.correct++;
+      q.answeredCorrectly = true;
+    } else {
+      stats.wrong++;
+
+      if (wrongQuestionsMode) {
+        // Yanlış Yapılan Sorular modunda soru yeniden eklenmez.
+      } else {
+        addWrongQuestionToPool(q);
+
+        if (!q.isRetry) {
+          const retryQuestion = {
+            ...q,
+            isRetry: true,
+            retryFrom: q.originalNo,
+            retryCount: 1
+          };
+
+          const insertIndex = Math.min(currentIndex + 5, currentQuestions.length);
+          currentQuestions.splice(insertIndex, 0, retryQuestion);
+        }
+      }
+    }
+
+    saveState();
+    loadQuestion();
+  }
+
+  function saveState() {
+    localStorage.setItem(currentSetKey, JSON.stringify({
+      currentQuestions,
+      currentIndex,
+      solvedIndex,
+      userAnswers,
+      stats
+    }));
+  }
+
+  function goForward() {
+    if (currentIndex < solvedIndex) {
+      currentIndex = solvedIndex + 1;
+    } else if (currentIndex < currentQuestions.length - 1) {
+      currentIndex++;
+    } else {
+      return showMenu();
+    }
+
+    saveState();
+    loadQuestion();
+    window.scrollTo(0, 0);
+  }
+
+  function goBack() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      saveState();
+      loadQuestion();
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function showMenu() {
+    wrongQuestionsMode = false;
+    document.getElementById("headerSubject").textContent = BASE_SUBJECT;
+    document.getElementById("quizContainer").style.display = "none";
+    document.getElementById("menuContainer").style.display = "block";
+    initMenu();
+    window.scrollTo(0, 0);
+  }
+
+  function clearAllStatistics() {
+    if (confirm("Tüm veriler sıfırlansın mı?")) {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith(storagePrefix())) localStorage.removeItem(k);
+      });
+      initMenu();
+    }
+  }
+
+  function resetCurrentSet() {
+    if (confirm("Bu deneme sıfırlansın mı?")) {
+      localStorage.removeItem(currentSetKey);
+      showMenu();
+    }
+  }
+
+  initMenu();
+</script>
+</body>
+</html>
